@@ -53,6 +53,13 @@ func (p *DefaultDNSProber) Query(server string, qname string, qtype uint16) (*dn
 	m.SetEdns0(1232, false)
 
 	in, rtt, err := c.Exchange(m, ensurePort(server))
+	// Automatic fallback to TCP if truncated (RFC 1035 §4.2.1 / RFC 7766)
+	if err == nil && in != nil && in.Truncated {
+		tcpIn, tcpRTT, tcpErr := p.QueryTCP(server, qname, qtype)
+		if tcpErr == nil && tcpIn != nil {
+			return tcpIn, rtt + tcpRTT, nil
+		}
+	}
 	return in, rtt, err
 }
 
@@ -66,6 +73,16 @@ func (p *DefaultDNSProber) QueryRecursive(server string, qname string, qtype uin
 	m.SetEdns0(1232, false)
 
 	in, rtt, err := c.Exchange(m, ensurePort(server))
+	// Automatic fallback to TCP if truncated
+	if err == nil && in != nil && in.Truncated {
+		cTCP := new(dns.Client)
+		cTCP.Net = "tcp"
+		cTCP.Timeout = p.Timeout
+		tcpIn, tcpRTT, tcpErr := cTCP.Exchange(m, ensurePort(server))
+		if tcpErr == nil && tcpIn != nil {
+			return tcpIn, rtt + tcpRTT, nil
+		}
+	}
 	return in, rtt, err
 }
 
@@ -79,6 +96,15 @@ func (p *DefaultDNSProber) QueryWithDO(server string, qname string, qtype uint16
 	m.SetEdns0(1232, true)
 
 	in, rtt, err := c.Exchange(m, ensurePort(server))
+	if err == nil && in != nil && in.Truncated {
+		cTCP := new(dns.Client)
+		cTCP.Net = "tcp"
+		cTCP.Timeout = p.Timeout
+		tcpIn, tcpRTT, tcpErr := cTCP.Exchange(m, ensurePort(server))
+		if tcpErr == nil && tcpIn != nil {
+			return tcpIn, rtt + tcpRTT, nil
+		}
+	}
 	return in, rtt, err
 }
 

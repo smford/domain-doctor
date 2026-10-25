@@ -26,7 +26,7 @@ var scanCmd = &cobra.Command{
 	Short: "Execute full diagnostic domain audit",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runScan(cmd.Context(), args[0], scanJSON, scanTUI, scanMermaid)
+		return runScan(cmd.Context(), sanitizeDomain(args[0]), scanJSON, scanTUI, scanMermaid)
 	},
 }
 
@@ -42,7 +42,6 @@ func runScan(ctx context.Context, domain string, asJSON, asTUI, asMermaid bool) 
 
 	if asTUI {
 		p := tea.NewProgram(tui.NewModel(domain, eng, nil, false, 0), tea.WithAltScreen())
-		// Trigger initial scan in background
 		go func() {
 			rep, err := eng.Run(ctx, domain, customResolver)
 			if err == nil {

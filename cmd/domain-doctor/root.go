@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -16,6 +18,25 @@ var (
 	servePort      string
 	showVersion    bool
 )
+
+func sanitizeDomain(input string) string {
+	raw := strings.TrimSpace(input)
+	if strings.HasPrefix(raw, "http://") || strings.HasPrefix(raw, "https://") {
+		u, err := url.Parse(raw)
+		if err == nil && u.Host != "" {
+			raw = u.Host
+		}
+	}
+	// Strip any path component if user typed domain.com/path
+	if idx := strings.Index(raw, "/"); idx != -1 {
+		raw = raw[:idx]
+	}
+	// Strip port if user typed domain.com:8080
+	if idx := strings.Index(raw, ":"); idx != -1 {
+		raw = raw[:idx]
+	}
+	return strings.TrimSuffix(strings.ToLower(strings.TrimSpace(raw)), ".")
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "domain-doctor [command|domain]",
@@ -36,10 +57,43 @@ transport security, BGP resilience, attack surface, and registration posture.`,
 
 		if len(args) == 1 {
 			// Default to scan mode if a single domain argument is passed
-			return runScan(cmd.Context(), args[0], scanJSON, scanTUI, scanMermaid)
+			return runScan(cmd.Context(), sanitizeDomain(args[0]), scanJSON, scanTUI, scanMermaid)
 		}
 
 		return cmd.Help()
+	},
+}
+
+var completionCmd = &cobra.Command{
+	Use:   "completion [bash|zsh|fish|powershell]",
+	Short: "Generate shell completion script",
+	Long: `To load completions:
+
+Bash:
+  $ source <(domain-doctor completion bash)
+
+Zsh:
+  $ source <(domain-doctor completion zsh)
+
+Fish:
+  $ domain-doctor completion fish | source
+`,
+	DisableFlagsInUseLine: true,
+	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+	Args:                  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		switch args[0] {
+		case "bash":
+			return cmd.Root().GenBashCompletion(os.Stdout)
+		case "zsh":
+			return cmd.Root().GenZshCompletion(os.Stdout)
+		case "fish":
+			return cmd.Root().GenFishCompletion(os.Stdout, true)
+		case "powershell":
+			return cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+		default:
+			return fmt.Errorf("unsupported shell: %s", args[0])
+		}
 	},
 }
 
@@ -58,6 +112,7 @@ func init() {
 	rootCmd.AddCommand(exportCmd)
 	rootCmd.AddCommand(auditDriftCmd)
 	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(completionCmd)
 }
 
 func runDaemon(port string) error {

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/miekg/dns"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/smford/domain-doctor/internal/engine"
 	"github.com/smford/domain-doctor/internal/prober"
@@ -38,25 +40,37 @@ func (c *NegativeCacheCheck) Run(ctx context.Context, execCtx *engine.ExecutionC
 
 	recordTypes := []uint16{dns.TypeA, dns.TypeMX}
 
+	// Bounded parallel worker pool across resolvers and record types
+	g, gCtx := errgroup.WithContext(ctx)
+	g.SetLimit(6)
+
+	var mu sync.Mutex
+
 	for _, qtype := range recordTypes {
-		qtypeName := dns.TypeToString[qtype]
-		authMsg, _, err := execCtx.DNSProber.Query(authServer, execCtx.Domain, qtype)
+		qt := qtype
+		qtypeName := dns.TypeToString[qt]
+
+		authMsg, _, err := execCtx.DNSProber.Query(authServer, execCtx.Domain, qt)
 		if err != nil || authMsg == nil {
 			continue
 		}
 
 		authHasRecord := (authMsg.Rcode == dns.RcodeSuccess && len(authMsg.Answer) > 0)
 
-		// 2. Query public recursive Anycast resolvers
-		var wg sync.WaitGroup
 		for _, resolver := range prober.PublicResolvers {
 			resAddr := resolver
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				recMsg, _, recErr := execCtx.DNSProber.QueryRecursive(resAddr, execCtx.Domain, qtype)
+			g.Go(func() error {
+				if gCtx.Err() != nil {
+					return gCtx.Err()
+				}
+
+				queryCtx, cancel := context.WithTimeout(gCtx, 3*time.Second)
+				defer cancel()
+
+				_ = queryCtx
+				recMsg, _, recErr := execCtx.DNSProber.QueryRecursive(resAddr, execCtx.Domain, qt)
 				if recErr != nil || recMsg == nil {
-					return
+					return nil
 				}
 
 				cachedState := ""
@@ -71,7 +85,6 @@ func (c *NegativeCacheCheck) Run(ctx context.Context, execCtx *engine.ExecutionC
 					var soaMinTTL uint32
 					var remainingTTL uint32
 
-					// Extract synthetic SOA from Authority section per RFC 2308
 					for _, nsRR := range recMsg.Ns {
 						if soa, ok := nsRR.(*dns.SOA); ok {
 							soaMaster = soa.Ns
@@ -97,7 +110,7 @@ func (c *NegativeCacheCheck) Run(ctx context.Context, execCtx *engine.ExecutionC
 					execCtx.AddNegativeCache(status)
 
 					if authHasRecord {
-						// Discrepancy: Authoritative NS has record, but resolver serves stale negative cache
+						mu.Lock()
 						execCtx.AddFinding(engine.Finding{
 							ID:       fmt.Sprintf("NEGCACHE-STALE-%s-%s", resAddr, qtypeName),
 							Category: c.Category(),
@@ -112,12 +125,15 @@ func (c *NegativeCacheCheck) Run(ctx context.Context, execCtx *engine.ExecutionC
 								DocURL:      "https://developers.cloudflare.com/1.1.1.1/purge-cache/",
 							},
 						})
+						mu.Unlock()
 					}
 				}
-			}()
+				return nil
+			})
 		}
-		wg.Wait()
 	}
+
+	_ = g.Wait()
 
 	if len(execCtx.NegativeCaches) == 0 {
 		execCtx.AddFinding(engine.Finding{

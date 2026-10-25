@@ -29,6 +29,27 @@ func TestFormatVersion(t *testing.T) {
 	}
 }
 
+func TestSanitizeDomain(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"example.com", "example.com"},
+		{"https://example.com", "example.com"},
+		{"http://example.com/test/path", "example.com"},
+		{"EXAMPLE.COM.", "example.com"},
+		{"example.com:443", "example.com"},
+		{"  sub.example.co.uk/  ", "sub.example.co.uk"},
+	}
+
+	for _, tt := range tests {
+		got := sanitizeDomain(tt.input)
+		if got != tt.expected {
+			t.Errorf("sanitizeDomain(%q) = %q, expected %q", tt.input, got, tt.expected)
+		}
+	}
+}
+
 func TestHealthzEndpoint(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {

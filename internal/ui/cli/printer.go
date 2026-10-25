@@ -18,12 +18,56 @@ const (
 	colorBold   = "\033[1m"
 )
 
+func ComputeHealthScore(report *engine.DiagnosticReport) (int, string) {
+	score := 100
+	for _, f := range report.Findings {
+		switch f.Severity {
+		case engine.SeverityCritical:
+			score -= 25
+		case engine.SeverityWarning:
+			score -= 10
+		}
+	}
+	if score < 0 {
+		score = 0
+	}
+
+	var grade string
+	switch {
+	case score >= 95:
+		grade = "A+"
+	case score >= 90:
+		grade = "A"
+	case score >= 85:
+		grade = "B+"
+	case score >= 80:
+		grade = "B"
+	case score >= 70:
+		grade = "C"
+	case score >= 60:
+		grade = "D"
+	default:
+		grade = "F"
+	}
+	return score, grade
+}
+
 func PrintReport(report *engine.DiagnosticReport) {
+	score, grade := ComputeHealthScore(report)
+
+	gradeColor := colorGreen
+	if score < 70 {
+		gradeColor = colorRed
+	} else if score < 85 {
+		gradeColor = colorYellow
+	}
+
 	fmt.Printf("\n%s╔════════════════════════════════════════════════════════════════════╗%s\n", colorCyan, colorReset)
 	fmt.Printf("%s║                    DOMAIN DOCTOR AUDIT REPORT                      ║%s\n", colorCyan, colorReset)
 	fmt.Printf("%s╚════════════════════════════════════════════════════════════════════╝%s\n", colorCyan, colorReset)
 
 	fmt.Printf("%sTarget Domain   :%s %s%s%s\n", colorBold, colorReset, colorCyan, report.Domain, colorReset)
+	fmt.Printf("%sOverall Health  :%s %s%d/100 (Grade: %s)%s\n", colorBold, colorReset, gradeColor, score, grade, colorReset)
 	fmt.Printf("%sScan Duration   :%s %s\n", colorBold, colorReset, report.Duration)
 	fmt.Printf("%sNameservers     :%s %s\n", colorBold, colorReset, strings.Join(report.Nameservers, ", "))
 
