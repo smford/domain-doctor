@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; stroke: #30363d; stroke-width: 1.5; rx: 10; }
+      .titlebar { fill: #161b22; rx: 10; }
+      .title-text { fill: #8b949e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; font-weight: 500; }
+      .term-text { font-family: "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace; font-size: 13.5px; line-height: 20px; }
+      .c-prompt { fill: #3fb950; font-weight: bold; }
+      .c-cmd { fill: #f0f6fc; font-weight: bold; }
+      .c-dim { fill: #8b949e; }
+      .c-white { fill: #f0f6fc; }
+      .c-cyan { fill: #58a6ff; font-weight: bold; }
+      .c-blue { fill: #79c0ff; }
+      .c-green { fill: #3fb950; font-weight: bold; }
+      .c-yellow { fill: #d29922; font-weight: bold; }
+      .c-red { fill: #f85149; font-weight: bold; }
+      .c-box { fill: #58a6ff; }
+      .c-highlight { fill: #f0883e; font-weight: bold; }
+    </style>
+  </defs>
+
+  <!-- Window Frame -->
+  <rect width="960" height="540" class="bg" />
+  <path d="M 0 10 C 0 4.477 4.477 0 10 0 L 950 0 C 955.523 0 960 4.477 960 10 L 960 40 L 0 40 Z" class="titlebar" />
+  <line x1="0" y1="40" x2="960" y2="40" stroke="#30363d" stroke-width="1" />
+
+  <!-- macOS Window Controls -->
+  <circle cx="24" cy="20" r="6.5" fill="#ff5f56" stroke="#e0443e" stroke-width="0.5" />
+  <circle cx="44" cy="20" r="6.5" fill="#ffbd2e" stroke="#dea123" stroke-width="0.5" />
+  <circle cx="64" cy="20" r="6.5" fill="#27c93f" stroke="#1aab29" stroke-width="0.5" />
+  <text x="480" y="25" text-anchor="middle" class="title-text">terminal — domain-doctor watch example.com --interval=3s</text>
+
+  <!-- Terminal Content -->
+  <g transform="translate(24, 70)" class="term-text">
+    <text x="0" y="0">
+      <tspan class="c-prompt">user@workstation</tspan><tspan class="c-dim">:</tspan><tspan class="c-blue">~</tspan><tspan class="c-dim">$</tspan> <tspan class="c-cmd">domain-doctor watch example.com --interval=3s</tspan>
+    </text>
+
+    <!-- Watch Dashboard Frame -->
+    <text x="0" y="30" class="c-box">┌─ [LIVE CUTOVER MONITOR] ─────────────────────────────────────────────────────────┐</text>
+    <text x="0" y="50" class="c-box">│ <tspan class="c-dim">Target Domain :</tspan> <tspan class="c-cmd">example.com</tspan>                 <tspan class="c-dim">Polling Interval :</tspan> <tspan class="c-cyan">3s (Cycle #42)</tspan>     │</text>
+    <text x="0" y="70" class="c-box">│ <tspan class="c-dim">Status        :</tspan> <tspan class="c-green">● ACTIVE STREAM</tspan>              <tspan class="c-dim">Last Polled      :</tspan> <tspan class="c-white">23:51:44 UTC</tspan>        │</text>
+    <text x="0" y="90" class="c-box">└──────────────────────────────────────────────────────────────────────────────────┘</text>
+
+    <!-- Live Nameserver SOA Table -->
+    <text x="0" y="122" class="c-cyan">── Authoritative Nameserver SOA Consistency ───────────────────────────────────────</text>
+    <text x="0" y="144"><tspan class="c-white">  NAMESERVER              IP ADDRESS        SOA SERIAL    RTT      SYNC STATUS</tspan></text>
+    <text x="0" y="164"><tspan class="c-dim">  ─────────────────────────────────────────────────────────────────────────────</tspan></text>
+    <text x="0" y="184"><tspan class="c-white">  ns1.provider-a.com      192.0.2.53        2026102501    12.4ms   </tspan><tspan class="c-green">[SYNCHRONIZED]</tspan></text>
+    <text x="0" y="204"><tspan class="c-white">  ns2.provider-a.com      198.51.100.53     2026102501    14.1ms   </tspan><tspan class="c-green">[SYNCHRONIZED]</tspan></text>
+    <text x="0" y="224"><tspan class="c-white">  ns1.provider-b.com      203.0.113.1       2026102502    28.6ms   </tspan><tspan class="c-highlight">[AHEAD: +1 SERIAL]</tspan></text>
+
+    <!-- Cutover Event Log -->
+    <text x="0" y="260" class="c-cyan">── Real-Time DNS Change Feed ──────────────────────────────────────────────────────</text>
+    <text x="0" y="282"><tspan class="c-dim">[23:50:12]</tspan> <tspan class="c-blue">INFO </tspan> <tspan class="c-white">Initial baseline established: 14 resource record sets loaded</tspan></text>
+    <text x="0" y="302"><tspan class="c-dim">[23:51:03]</tspan> <tspan class="c-green">DRIFT</tspan> <tspan class="c-highlight">A Record Updated:</tspan> <tspan class="c-dim">api.example.com</tspan></text>
+    <text x="0" y="322"><tspan class="c-red">        - Old:</tspan> <tspan class="c-white">93.184.216.34 (TTL: 300)</tspan></text>
+    <text x="0" y="342"><tspan class="c-green">        + New:</tspan> <tspan class="c-white">104.20.23.154 (TTL: 60)</tspan></text>
+    <text x="0" y="362"><tspan class="c-dim">[23:51:09]</tspan> <tspan class="c-green">DRIFT</tspan> <tspan class="c-highlight">HTTPS Record Added:</tspan> <tspan class="c-white">api.example.com (pri: 1 alpn="h3,h2")</tspan></text>
+    <text x="0" y="382"><tspan class="c-dim">[23:51:44]</tspan> <tspan class="c-yellow">ALERT</tspan> <tspan class="c-white">SOA Serial increment detected on ns1.provider-b.com (2026102501 → 2026102502)</tspan></text>
+
+    <!-- Footer Controls -->
+    <text x="0" y="425" class="c-dim">───────────────────────────────────────────────────────────────────────────────────</text>
+    <text x="0" y="445"><tspan class="c-dim">Press </tspan><tspan class="c-cmd">[Ctrl+C]</tspan><tspan class="c-dim"> to stop monitoring  │  Pass </tspan><tspan class="c-cmd">--exit-on-change</tspan><tspan class="c-dim"> for automated CI/CD gating</tspan></text>
+  </g>
+</svg>

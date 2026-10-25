@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; stroke: #30363d; stroke-width: 1.5; rx: 10; }
+      .titlebar { fill: #161b22; rx: 10; }
+      .title-text { fill: #8b949e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; font-weight: 500; }
+      .term-text { font-family: "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace; font-size: 13.5px; line-height: 20px; }
+      .c-prompt { fill: #3fb950; font-weight: bold; }
+      .c-cmd { fill: #f0f6fc; font-weight: bold; }
+      .c-dim { fill: #8b949e; }
+      .c-white { fill: #f0f6fc; }
+      .c-cyan { fill: #58a6ff; font-weight: bold; }
+      .c-blue { fill: #79c0ff; }
+      .c-green { fill: #3fb950; font-weight: bold; }
+      .c-yellow { fill: #d29922; font-weight: bold; }
+      .c-red { fill: #f85149; font-weight: bold; }
+      .c-highlight { fill: #f0883e; font-weight: bold; }
+    </style>
+  </defs>
+
+  <!-- Window Frame -->
+  <rect width="960" height="480" class="bg" />
+  <path d="M 0 10 C 0 4.477 4.477 0 10 0 L 950 0 C 955.523 0 960 4.477 960 10 L 960 40 L 0 40 Z" class="titlebar" />
+  <line x1="0" y1="40" x2="960" y2="40" stroke="#30363d" stroke-width="1" />
+
+  <!-- macOS Window Controls -->
+  <circle cx="24" cy="20" r="6.5" fill="#ff5f56" stroke="#e0443e" stroke-width="0.5" />
+  <circle cx="44" cy="20" r="6.5" fill="#ffbd2e" stroke="#dea123" stroke-width="0.5" />
+  <circle cx="64" cy="20" r="6.5" fill="#27c93f" stroke="#1aab29" stroke-width="0.5" />
+  <text x="480" y="25" text-anchor="middle" class="title-text">terminal — domain-doctor diff baseline.json example.com</text>
+
+  <!-- Terminal Content -->
+  <g transform="translate(24, 70)" class="term-text">
+    <text x="0" y="0">
+      <tspan class="c-prompt">user@workstation</tspan><tspan class="c-dim">:</tspan><tspan class="c-blue">~</tspan><tspan class="c-dim">$</tspan> <tspan class="c-cmd">domain-doctor diff pre-migration.json example.com</tspan>
+    </text>
+
+    <text x="0" y="32" class="c-cyan">=== Zone Topology Diff: example.com ===</text>
+
+    <!-- Modified Nameservers -->
+    <text x="0" y="65"><tspan class="c-highlight">[MODIFIED]</tspan> <tspan class="c-white">Authoritative Nameservers (NS):</tspan></text>
+    <text x="0" y="85"><tspan class="c-red">  - Baseline :</tspan> <tspan class="c-white">ns1.p01.dynect.net., ns2.p01.dynect.net.</tspan></text>
+    <text x="0" y="105"><tspan class="c-green">  + Live     :</tspan> <tspan class="c-white">hera.ns.cloudflare.com., elliott.ns.cloudflare.com.</tspan></text>
+
+    <!-- Added HTTPS records -->
+    <text x="0" y="135"><tspan class="c-green">[ADDED]</tspan> <tspan class="c-white">HTTPS Service Binding (RFC 9460):</tspan></text>
+    <text x="0" y="155"><tspan class="c-green">  + Live     :</tspan> <tspan class="c-white">example.com. 300 IN HTTPS 1 . alpn="h3,h2" ipv4hint="104.20.23.154"</tspan></text>
+    <text x="0" y="175"><tspan class="c-green">  + Live     :</tspan> <tspan class="c-white">www.example.com. 300 IN HTTPS 1 . alpn="h3,h2" ipv4hint="104.20.23.154"</tspan></text>
+
+    <!-- Modified Mail records -->
+    <text x="0" y="205"><tspan class="c-highlight">[MODIFIED]</tspan> <tspan class="c-white">Sender Policy Framework (TXT/SPF):</tspan></text>
+    <text x="0" y="225"><tspan class="c-red">  - Baseline :</tspan> <tspan class="c-white">"v=spf1 include:_spf.google.com ~all"</tspan></text>
+    <text x="0" y="245"><tspan class="c-green">  + Live     :</tspan> <tspan class="c-white">"v=spf1 include:_spf.google.com include:mailgun.org ~all"</tspan></text>
+
+    <!-- Removed Stale Records -->
+    <text x="0" y="275"><tspan class="c-red">[REMOVED]</tspan> <tspan class="c-white">Dangling Staging CNAME:</tspan></text>
+    <text x="0" y="295"><tspan class="c-red">  - Baseline :</tspan> <tspan class="c-white">staging.example.com. 300 IN CNAME old-bucket.s3-website.amazonaws.com.</tspan></text>
+
+    <!-- Summary Statistics -->
+    <text x="0" y="340" class="c-dim">───────────────────────────────────────────────────────────────────────────────────</text>
+    <text x="0" y="365"><tspan class="c-cyan">Summary: </tspan><tspan class="c-green">2 record sets added</tspan><tspan class="c-dim">, </tspan><tspan class="c-highlight">2 record sets modified</tspan><tspan class="c-dim">, </tspan><tspan class="c-red">1 record set removed</tspan></text>
+    <text x="0" y="388"><tspan class="c-dim">No unintended drift detected. Post-migration zone cutover verified successfully.</tspan></text>
+  </g>
+</svg>

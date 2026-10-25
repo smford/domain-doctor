@@ -30,6 +30,12 @@ It evaluates internet domain reliability, security, and infrastructure resilienc
 
 ---
 
+## 📸 Terminal Overview
+
+![Domain Doctor Authoritative Diagnostic Audit](assets/screenshot-scan.svg)
+
+---
+
 ## 🔍 How Domain Doctor Works
 
 ```mermaid
@@ -68,43 +74,62 @@ flowchart TD
 Run a full authoritative security and health scan against any domain:
 
 ```bash
-# Standard authoritative diagnostic run
+# Standard authoritative diagnostic run with colored terminal output
 domain-doctor scan example.com
 
-# Executive summary mode
-domain-doctor scan example.com --summary
+# Filter to specific categories (e.g. mail security and negative caching)
+domain-doctor scan example.com --category=mail,negcache
 
-# Generate formatted Markdown report
-domain-doctor scan example.com --report=markdown > audit-report.md
+# Generate formatted Markdown report for documentation
+domain-doctor scan example.com --format=markdown > audit-report.md
 ```
 
 @tab Continuous Drift Watch
-Monitor a domain in real-time with automatic re-checks and exit on any detected DNS change:
+Monitor a domain in real-time with automatic re-checks and live SOA serial synchronization tracking:
+
+![Live Cutover Watch Mode](assets/screenshot-watch.svg)
 
 ```bash
-# Watch example.com every 30 seconds
-domain-doctor watch example.com --interval=30s
+# Watch example.com every 3 seconds during a migration
+domain-doctor watch example.com --interval=3s
 
-# Trigger alerts in CI/CD when DNS records change during a migration
-domain-doctor watch example.com --interval=10s --exit-on-change
+# Trigger alerts in CI/CD when DNS records change during cutover
+domain-doctor watch example.com --interval=3s --exit-on-change
 ```
 
-@tab GitHub Actions & SARIF
-Run scheduled daily audits and inject security findings into GitHub Security tab:
+@tab Zone Diffing
+Compare live authoritative DNS records against a pre-migration snapshot:
+
+![Zone Topology Diff](assets/screenshot-diff.svg)
 
 ```bash
-# Run scan with SARIF v2.1.0 output
-domain-doctor scan example.com --sarif > results.sarif
+# Capture pre-migration snapshot
+domain-doctor snapshot example.com -o baseline.json
+
+# Diff baseline against live nameservers
+domain-doctor diff baseline.json example.com
 ```
 
-Automate this via GitHub Actions with one click. See [CI/CD & SARIF Integration](ci-cd-sarif.md).
+@tab Official GitHub Action
+Run automated daily audits and inject security findings directly into GitHub Security:
+
+```yaml
+- name: Audit Domain Health
+  uses: smford/domain-doctor@v1
+  with:
+    domain: 'example.com'
+    sarif: 'true'
+    step-summary: 'true'
+```
+
+See [Worked Examples](worked-examples.md) and [CI/CD & SARIF Integration](ci-cd-sarif.md).
 
 @tab Terraform Drift Audit
 Detect out-of-band DNS changes made in cloud consoles against your Terraform state:
 
 ```bash
 # Audit terraform state against live authoritative nameservers
-domain-doctor audit-drift example.com ./terraform.tfstate
+domain-doctor audit-drift example.com --tf-state ./terraform.tfstate
 ```
 :::
 
@@ -113,6 +138,7 @@ domain-doctor audit-drift example.com ./terraform.tfstate
 ## 📚 Documentation Navigation
 
 - **[Getting Started](getting-started.md)**: Installation guides (Homebrew, Docker, Static Binaries, Go install), verification with Cosign, and first scan walkthrough.
+- **[Worked Examples & Tasks](worked-examples.md)**: Step-by-step guides with authentic CLI outputs for DNS cutovers, mail deliverability debugging, and drift verification.
 - **[Rule Catalog](rules.md)**: Complete reference for all 30 diagnostic and security rules (`DD-DNS-001` through `DD-THR-002`), including threat models and remediation steps.
 - **[CLI Command Reference](cli-reference.md)**: Exhaustive reference for all 10 CLI subcommands, flags, and usage examples.
 - **[Configuration Guide](configuration.md)**: Customizing `.domain-doctor.yaml`, enabling/disabling checks, and setting rule severity overrides.

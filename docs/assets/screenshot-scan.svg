@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; stroke: #30363d; stroke-width: 1.5; rx: 10; }
+      .titlebar { fill: #161b22; rx: 10; }
+      .title-text { fill: #8b949e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; font-weight: 500; }
+      .term-text { font-family: "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace; font-size: 13.5px; line-height: 20px; }
+      .c-prompt { fill: #3fb950; font-weight: bold; }
+      .c-cmd { fill: #f0f6fc; font-weight: bold; }
+      .c-dim { fill: #8b949e; }
+      .c-white { fill: #f0f6fc; }
+      .c-cyan { fill: #58a6ff; font-weight: bold; }
+      .c-blue { fill: #79c0ff; }
+      .c-green { fill: #3fb950; font-weight: bold; }
+      .c-yellow { fill: #d29922; font-weight: bold; }
+      .c-red { fill: #f85149; font-weight: bold; }
+      .c-purple { fill: #bc8cff; }
+      .c-box { fill: #58a6ff; font-weight: bold; }
+    </style>
+  </defs>
+
+  <!-- Window Frame -->
+  <rect width="960" height="620" class="bg" />
+  <path d="M 0 10 C 0 4.477 4.477 0 10 0 L 950 0 C 955.523 0 960 4.477 960 10 L 960 40 L 0 40 Z" class="titlebar" />
+  <line x1="0" y1="40" x2="960" y2="40" stroke="#30363d" stroke-width="1" />
+
+  <!-- macOS Window Controls -->
+  <circle cx="24" cy="20" r="6.5" fill="#ff5f56" stroke="#e0443e" stroke-width="0.5" />
+  <circle cx="44" cy="20" r="6.5" fill="#ffbd2e" stroke="#dea123" stroke-width="0.5" />
+  <circle cx="64" cy="20" r="6.5" fill="#27c93f" stroke="#1aab29" stroke-width="0.5" />
+  <text x="480" y="25" text-anchor="middle" class="title-text">terminal — domain-doctor scan example.com</text>
+
+  <!-- Terminal Content -->
+  <g transform="translate(24, 70)" class="term-text">
+    <!-- Command Prompt -->
+    <text x="0" y="0">
+      <tspan class="c-prompt">user@workstation</tspan><tspan class="c-dim">:</tspan><tspan class="c-blue">~</tspan><tspan class="c-dim">$</tspan> <tspan class="c-cmd">domain-doctor scan example.com</tspan>
+    </text>
+
+    <!-- Box Header -->
+    <text x="0" y="28" class="c-box">╔═════════════════════════════════════════════════════════════════════════════════╗</text>
+    <text x="0" y="48" class="c-box">║                         DOMAIN DOCTOR AUDIT REPORT                              ║</text>
+    <text x="0" y="68" class="c-box">╚═════════════════════════════════════════════════════════════════════════════════╝</text>
+
+    <!-- Metadata Summary -->
+    <text x="0" y="94"><tspan class="c-dim">Target Domain   :</tspan> <tspan class="c-cmd">example.com</tspan></text>
+    <text x="0" y="114"><tspan class="c-dim">Overall Health  :</tspan> <tspan class="c-red">15/100 (Grade: F)</tspan>  <tspan class="c-dim">│ Scan Duration : 3.84s</tspan></text>
+    <text x="0" y="134"><tspan class="c-dim">Nameservers     :</tspan> <tspan class="c-white">hera.ns.cloudflare.com, elliott.ns.cloudflare.com</tspan></text>
+    <text x="0" y="154"><tspan class="c-dim">Findings Summary:</tspan> <tspan class="c-green">19 PASS</tspan> <tspan class="c-dim">│</tspan> <tspan class="c-blue">7 INFO</tspan> <tspan class="c-dim">│</tspan> <tspan class="c-yellow">6 WARN</tspan> <tspan class="c-dim">│</tspan> <tspan class="c-red">1 CRIT</tspan></text>
+
+    <!-- Section: DNS -->
+    <text x="0" y="186" class="c-cyan">── DNS Core &amp; Delegation ────────────────────────────────────────────────────────</text>
+    <text x="0" y="206"><tspan class="c-green">  [PASS]</tspan> <tspan class="c-white">DNS-NS-COUNT:</tspan> <tspan class="c-dim">2 authoritative nameservers discovered (RFC 2182 redundancy met)</tspan></text>
+    <text x="0" y="226"><tspan class="c-green">  [PASS]</tspan> <tspan class="c-white">DNS-SOA-SYNC:</tspan> <tspan class="c-dim">Authoritative fleet synchronized on serial 2418004112</tspan></text>
+    <text x="0" y="246"><tspan class="c-green">  [PASS]</tspan> <tspan class="c-white">HTTPS-SVCB:</tspan> <tspan class="c-dim">HTTPS Service Binding (RFC 9460) configured with HTTP/3 ALPN</tspan></text>
+
+    <!-- Section: Mail Security -->
+    <text x="0" y="278" class="c-cyan">── Mail &amp; Identity Security ─────────────────────────────────────────────────────</text>
+    <text x="0" y="298"><tspan class="c-green">  [PASS]</tspan> <tspan class="c-white">SPF-LOOKUP-COUNT:</tspan> <tspan class="c-dim">SPF mechanisms within limit (0 / 10 lookups) [v=spf1 -all]</tspan></text>
+    <text x="0" y="318"><tspan class="c-green">  [PASS]</tspan> <tspan class="c-white">DMARC-POLICY:</tspan> <tspan class="c-dim">Strict spoofing rejection enforced [v=DMARC1; p=reject; sp=reject]</tspan></text>
+    <text x="0" y="338"><tspan class="c-yellow">  [WARN]</tspan> <tspan class="c-white">DMARC-RUA-MISSING:</tspan> <tspan class="c-dim">No aggregate reporting mailbox (rua) configured</tspan></text>
+    <text x="0" y="358"><tspan class="c-yellow">  [WARN]</tspan> <tspan class="c-white">MTA-STS-MISSING:</tspan> <tspan class="c-dim">No inbound SMTP transport policy at _mta-sts.example.com</tspan></text>
+
+    <!-- Section: Security & Cryptography -->
+    <text x="0" y="390" class="c-cyan">── Cryptographic &amp; Web Security ─────────────────────────────────────────────────</text>
+    <text x="0" y="410"><tspan class="c-red">  [CRIT]</tspan> <tspan class="c-white">DNSSEC-BROKEN-CHAIN:</tspan> <tspan class="c-red">Parent DS record exists without matching DNSKEY/RRSIG in zone</tspan></text>
+    <text x="0" y="430"><tspan class="c-yellow">  [WARN]</tspan> <tspan class="c-white">CAA-MISSING:</tspan> <tspan class="c-dim">Missing CAA records; any public WebPKI CA may issue certificates</tspan></text>
+    <text x="0" y="450"><tspan class="c-green">  [PASS]</tspan> <tspan class="c-white">TLS-RUNWAY:</tspan> <tspan class="c-dim">Valid TLS certificate active (60 days runway remaining)</tspan></text>
+
+    <!-- Section: Resilience & Routing -->
+    <text x="0" y="482" class="c-cyan">── Resilience &amp; BGP Routing ─────────────────────────────────────────────────────</text>
+    <text x="0" y="502"><tspan class="c-yellow">  [WARN]</tspan> <tspan class="c-white">BGP-SINGLE-ASN:</tspan> <tspan class="c-dim">All authoritative nameservers reside on AS13335 (Single Point of Failure)</tspan></text>
+    <text x="0" y="522"><tspan class="c-green">  [PASS]</tspan> <tspan class="c-white">NEGCACHE-CLEAN:</tspan> <tspan class="c-dim">RFC 2308 negative cache synchronized across 1.1.1.1, 8.8.8.8, 9.9.9.9</tspan></text>
+  </g>
+</svg>

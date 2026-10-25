@@ -1,5 +1,6 @@
 * [Overview](index.md)
 * [Getting Started](getting-started.md)
+* [Worked Examples & Tasks](worked-examples.md)
 * [Rule Catalog (30 Checks)](rules.md)
   * [1. DNS Core Protocols](rules.md#1-dns-core-protocols-dd-dns)
   * [2. Negative Caching](rules.md#2-negative-caching-dd-nc)

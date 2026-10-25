@@ -8,6 +8,10 @@
 
 **A production-grade, authoritative-first domain health inspection, DNS diagnostic analysis, and TLS autopsy CLI & TUI utility.**
 
+<p align="center">
+  <img src="docs/assets/screenshot-scan.svg" alt="Domain Doctor Authoritative Diagnostic Audit Terminal" width="850">
+</p>
+
 `domain-doctor` evaluates internet domain reliability, security, and infrastructure resilience. By directly querying authoritative nameservers over raw UDP/TCP and cross-referencing public Anycast recursive resolvers worldwide, it uncovers delegation errors, mail deliverability misconfigurations, transport security vulnerabilities, RFC 2308 negative cache staleness, BGP routing single points of failure, and infrastructure-as-code drift.
 
 ---
@@ -58,7 +62,7 @@ Download pre-compiled hermetic static binaries (`CGO_ENABLED=0`) for macOS and L
 Execute the complete diagnostic matrix on any domain:
 
 ```bash
-domain-doctor scan github.com
+domain-doctor scan example.com
 ```
 
 **Realistic Terminal Output:**
@@ -67,32 +71,39 @@ domain-doctor scan github.com
 ╔════════════════════════════════════════════════════════════════════╗
 ║                    DOMAIN DOCTOR AUDIT REPORT                      ║
 ╚════════════════════════════════════════════════════════════════════╝
-Target Domain   : github.com
+Target Domain   : example.com
 Overall Health  : 95/100 (Grade: A+)
-Scan Duration   : 1.42s
-Nameservers     : dns1.p08.nsone.net, dns2.p08.nsone.net, ns-1283.awsdns-32.org, ns-1707.awsdns-21.co.uk
-Findings Summary: 14 PASS | 2 INFO | 0 WARN | 0 CRIT
+Scan Duration   : 1.24s
+Nameservers     : ns1.example.com, ns2.example.com
+Findings Summary: 21 PASS | 5 INFO | 1 WARN | 0 CRIT
 
 ── DNS Checks ────────────────────────────────────────────────────────
-  [PASS] DNS-NS-COUNT: 4 authoritative nameservers discovered
-    Nameservers: dns1.p08.nsone.net, dns2.p08.nsone.net, ns-1283.awsdns-32.org, ns-1707.awsdns-21.co.uk
-  [PASS] DNS-SOA-SYNC: All authoritative nameservers synchronized on SOA serial 2026102501
-  [PASS] DNS-TCP-OK: TCP fallback functional on port 53 (RTT: 28ms)
-  [PASS] DNS-AXFR-SECURE: Zone transfer (AXFR) properly refused on all authoritative nameservers
-  [PASS] DNS-RECURSION-CLOSED: Open recursion disabled across authoritative nameservers
+  [PASS] DNS-NS-COUNT (DD-DNS-001): 2 authoritative nameservers discovered
+    Nameservers: ns1.example.com, ns2.example.com
+  [PASS] DNS-SOA-SYNC (DD-DNS-001): All authoritative nameservers synchronized on SOA serial 2026102501
+  [PASS] DNS-TCP-OK (DD-DNS-001): TCP fallback functional on port 53 (RTT: 24ms)
+  [PASS] DNS-AXFR-SECURE (DD-DNS-002): Zone transfer (AXFR) properly refused on all authoritative nameservers
+  [PASS] DNS-RECURSION-CLOSED (DD-DNS-003): Open recursion disabled across authoritative nameservers
 
 ── NEGATIVECACHE Checks ──────────────────────────────────────────────
-  [PASS] NEGCACHE-CLEAN: No stale RFC 2308 negative caching observed across public resolvers
-    All tested Anycast resolvers (1.1.1.1, 8.8.8.8, 9.9.9.9, OpenDNS) return synchronized answers.
+  [PASS] NEGCACHE-CLEAN (DD-NC-001): No stale RFC 2308 negative caching observed across public resolvers
+    All tested Anycast resolvers (1.1.1.1, 8.8.8.8, 9.9.9.9) return synchronized answers.
 
 ── MAIL Checks ───────────────────────────────────────────────────────
-  [PASS] SPF-LOOKUP-COUNT-HEALTHY: SPF record lookup count healthy (3 / 10 allowed)
-  [PASS] DMARC-POLICY-REJECT: Strong DMARC policy configured (p=reject)
-  [PASS] DKIM-SELECTORS-DISCOVERED: Active DKIM public keys discovered for selector(s): [s1, s2]
+  [PASS] SPF-LOOKUP-COUNT-HEALTHY (DD-MAIL-001): SPF record lookup count healthy (3 / 10 allowed)
+  [PASS] DMARC-POLICY-REJECT (DD-MAIL-002): Strong DMARC policy configured (p=reject)
+  [PASS] DKIM-SELECTORS-DISCOVERED (DD-MAIL-003): Active DKIM public keys discovered for selector(s): [s1, s2]
+  [PASS] MTA-STS-ENFORCED (DD-MAIL-005): Valid MTA-STS policy discovered in mode 'enforce' (id: 20261025)
+
+── SECURITY Checks ───────────────────────────────────────────────────
+  [PASS] DNSSEC-CHAIN-VALID (DD-SEC-001): DNSSEC chain-of-trust validated (DS -> DNSKEY -> RRSIG)
+  [PASS] CAA-POLICY-DEFINED (DD-SEC-004): Valid CAA record configured restricting authorized issuers
+  [PASS] TLS-HEALTHY (DD-SEC-005): Certificate valid (runway: 74 days, TLS 1.3, strong cipher suites)
+  [INFO] PSL-COOKIE-BOUNDARY (DD-SEC-009): Domain operates at organizational boundary (eTLD+1) under .com
 
 ── RESILIENCE Checks ─────────────────────────────────────────────────
-  [PASS] BGP-ASN-DIVERSE: Resilient BGP routing diversity: Authoritative fleet spans 2 ASNs (AS16509, AS19994)
-    Nameservers are distributed across distinct autonomous systems (Amazon Route53 & NS1).
+  [PASS] BGP-ASN-DIVERSE (DD-RES-001): Resilient BGP routing diversity: Authoritative fleet spans 2 ASNs (AS13335, AS15169)
+  [PASS] EDNS-BUFFER-COMPLIANT (DD-RES-003): Nameservers adhere to DNS Flag Day 2020 buffer standards (1232 bytes)
 ```
 
 ---
@@ -105,7 +116,11 @@ When performing a DNS migration, nameserver transfer, or record cutover, launch 
 domain-doctor watch example.com --interval 3s
 ```
 
-Tracks authoritative SOA serial changes, record transitions, and negative cache evictions in a real-time Bubble Tea TUI dashboard.
+Tracks authoritative SOA serial changes, record transitions, and negative cache evictions in a real-time Bubble Tea TUI dashboard:
+
+<p align="center">
+  <img src="docs/assets/screenshot-watch.svg" alt="domain-doctor watch live cutover monitoring dashboard" width="850">
+</p>
 
 ---
 
@@ -145,26 +160,19 @@ flowchart TD
 
 ### 4. Zone Snapshot & Migration Diffing
 
-Save a topology snapshot before making DNS changes, then verify live propagation afterward:
+Save an immutable zone topology snapshot before making DNS changes, then verify live propagation afterward:
 
 ```bash
 # 1. Snapshot prior state
-domain-doctor snapshot mydomain.com -o pre-migration.json
+domain-doctor snapshot example.com -o pre-migration.json
 
 # 2. Diff live DNS against pre-migration baseline
-domain-doctor diff pre-migration.json mydomain.com
+domain-doctor diff pre-migration.json example.com
 ```
 
-```text
-=== Zone Topology Diff: mydomain.com ===
-
-[MODIFIED] A Records:
-  - Snapshot: 198.51.100.10
-  + Live:     203.0.113.25
-
-[ADDED] TXT Records:
-  + Live:     v=spf1 include:_spf.google.com ~all
-```
+<p align="center">
+  <img src="docs/assets/screenshot-diff.svg" alt="domain-doctor diff zone migration output" width="850">
+</p>
 
 ---
 
@@ -200,6 +208,23 @@ domain-doctor export mydomain.com --format=bind
 # Export Terraform Route53 HCL resources
 domain-doctor export mydomain.com --format=hcl
 ```
+
+---
+
+## 📋 Common Tasks & Worked Examples
+
+Detailed step-by-step guides with authentic terminal output for critical real-world DNS and perimeter tasks are documented in the [**Worked Examples Guide**](docs/worked-examples.md):
+
+| Task & Scenario | Description | Key Command |
+| :--- | :--- | :--- |
+| [**1. Pre-Migration DNS Baselining**](docs/worked-examples.md#task-1-pre-migration-dns-baselining--snapshotting) | Capture an immutable point-in-time cryptographic JSON snapshot before registrar or provider changes. | `domain-doctor snapshot example.com -o baseline.json` |
+| [**2. Live Cutover & Zero-Downtime Validation**](docs/worked-examples.md#task-2-live-cutover-monitoring--zero-downtime-validation) | Stream real-time SOA serial convergence and Anycast latency across global resolvers during cutover. | `domain-doctor watch example.com --interval=3s` |
+| [**3. Post-Migration Topology Diffing**](docs/worked-examples.md#task-3-post-migration-drift-auditing--change-verification) | Automatically flag unintended record drops, missing mail security, or unwanted mutations against baseline. | `domain-doctor diff baseline.json example.com` |
+| [**4. Email Deliverability & SPF 10-Lookup Limit**](docs/worked-examples.md#task-4-troubleshooting-silent-email-deliverability-failures-spf-10-lookup-permerror-dmarc-dkim) | Traverse nested `include` mechanisms to prevent RFC 7208 PermError drop, inspect DMARC and DKIM keys. | `domain-doctor scan example.com --category=mail` |
+| [**5. RFC 2308 Negative Cache Eviction Delays**](docs/worked-examples.md#task-5-investigating-rfc-2308-negative-cache-eviction-delays) | Calculate exact remaining Anycast cache seconds ($\min(\text{SOA.TTL}, \text{SOA.MINIMUM})$) for `NXDOMAIN`. | `domain-doctor scan example.com --category=negcache` |
+| [**6. Subdomain Takeovers & Dangling CNAMEs**](docs/worked-examples.md#task-6-detecting-subdomain-takeovers--dangling-cnames) | Detect orphaned pointers to unclaimed cloud buckets, S3, CloudFront, Heroku, or GitHub Pages. | `domain-doctor scan example.com --category=security` |
+| [**7. Out-of-Band Terraform State Drift**](docs/worked-examples.md#task-7-auditing-cloud-console-drift-against-terraform-state) | Reconcile live authoritative records against `terraform.tfstate` to find uncommitted manual changes. | `domain-doctor audit-drift example.com --tf-state=terraform.tfstate` |
+| [**8. GitHub Actions CI/CD SARIF Security Gates**](docs/worked-examples.md#task-8-continuous-daily-auditing-in-github-actions-with-sarif-code-scanning) | Run daily automated audits with native SARIF output injected into GitHub Security Code Scanning alerts. | `uses: smford/domain-doctor@v1` |
 
 ---
 
@@ -313,19 +338,19 @@ jobs:
 
 ## 🛠 Command Reference
 
-| Subcommand | Description |
-| :--- | :--- |
-| `scan <domain>` | Run full diagnostic suite with terminal table output (`--json`, `--tui`, `--mermaid`, `--category`, `--severity`, `--quiet`, `--config`) |
-| `lint <domain>` | Headless CI/CD policy audit with exit codes and SARIF / Markdown output (`--policy=strict`, `--format=sarif`, `--output=<file>`, `--config`) |
-| `watch <domain>` | Continuous polling TUI dashboard for tracking live DNS cutovers (`--interval=3s`) |
-| `snapshot <domain>` | Export current zone records and diagnostic findings to structured JSON |
-| `diff <file.json> <domain>` | Compare a previously captured JSON snapshot against live DNS |
-| `diagram <domain>` | Generate Mermaid diagrams (`--type=delegation\|spf\|mail`) |
-| `export <domain>` | Export discovered records as standard RFC 1035 BIND or Terraform Route53 HCL |
-| `audit-drift <domain>` | Compare declared Route53/Cloudflare resources in `terraform.tfstate` against live DNS |
-| `version` | Display version, commit, and build information |
-| `serve` | Run HTTP `/healthz` daemon on port 8080 (`--port 8080`) |
-| `completion <shell>` | Generate shell autocompletions (`bash`, `zsh`, `fish`, `powershell`) |
+| Subcommand | Flags & Options | Description |
+| :--- | :--- | :--- |
+| `scan <domain>` | `--format=cli\|json\|sarif\|markdown\|github-markdown`, `--sarif`, `--output=<file>`, `--category=<cats>`, `--severity=<sev>`, `--quiet`, `--tui`, `--mermaid`, `--config=<file>` | Run full diagnostic suite with terminal table, JSON, SARIF, or Markdown output. |
+| `lint <domain>` | `--policy=strict\|standard`, `--format=sarif\|markdown\|cli\|json`, `--output=<file>`, `--config=<file>` | Headless CI/CD policy audit with non-zero exit codes for breaking issues. |
+| `watch <domain>` | `--interval=3s`, `--exit-on-change` | Continuous polling TUI dashboard for tracking live DNS cutovers and serial sync. |
+| `snapshot <domain>` | `-o <file>` | Export current zone records and diagnostic findings to structured JSON. |
+| `diff <file.json> <domain>` | `--ignore-ttl` | Compare a previously captured JSON snapshot against live DNS or compare two snapshots. |
+| `diagram <domain>` | `--type=delegation\|spf\|mail` | Generate Mermaid diagrams to stdout. |
+| `export <domain>` | `--format=bind\|terraform` | Export discovered records as standard RFC 1035 BIND zone or Terraform Route53 HCL. |
+| `audit-drift <domain>` | `--tf-state=<path>` | Compare declared Route53/Cloudflare resources in `terraform.tfstate` against live DNS. |
+| `version` | | Display version, commit, and build information. |
+| `serve` | `--port 8080` | Run HTTP `/healthz` daemon on specified port. |
+| `completion <shell>` | | Generate shell autocompletions (`bash`, `zsh`, `fish`, `powershell`). |
 
 ---
 
