@@ -16,6 +16,7 @@ import (
 
 type NegativeCacheCheck struct{}
 
+func (c *NegativeCacheCheck) ID() string       { return "DD-NC-001" }
 func (c *NegativeCacheCheck) Name() string     { return "dns_negcache" }
 func (c *NegativeCacheCheck) Category() string { return "NegativeCache" }
 

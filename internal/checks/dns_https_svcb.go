@@ -12,6 +12,7 @@ import (
 
 type HTTPSSVCBCheck struct{}
 
+func (c *HTTPSSVCBCheck) ID() string       { return "DD-DNS-004" }
 func (c *HTTPSSVCBCheck) Name() string     { return "dns_https_svcb" }
 func (c *HTTPSSVCBCheck) Category() string { return "DNS" }
 

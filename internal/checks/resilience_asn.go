@@ -13,6 +13,7 @@ import (
 
 type ASNDiversityCheck struct{}
 
+func (c *ASNDiversityCheck) ID() string       { return "DD-RES-001" }
 func (c *ASNDiversityCheck) Name() string     { return "resilience_asn" }
 func (c *ASNDiversityCheck) Category() string { return "Resilience" }
 

@@ -12,6 +12,7 @@ import (
 
 type SPFCheck struct{}
 
+func (c *SPFCheck) ID() string       { return "DD-MAIL-001" }
 func (c *SPFCheck) Name() string     { return "mail_spf" }
 func (c *SPFCheck) Category() string { return "Mail" }
 

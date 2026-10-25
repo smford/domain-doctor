@@ -15,7 +15,9 @@ import (
 var (
 	customResolver string
 	globalTimeout  time.Duration
-	servePort      string
+	configFile     string
+	rootServePort  string
+	serveCmdPort   string
 	showVersion    bool
 )
 
@@ -44,13 +46,13 @@ Evaluates DNS delegation, RFC 2308 negative caching, mail authentication (SPF/DM
 transport security, BGP resilience, attack surface, and registration posture.`,
 	Args: cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if showVersion {
+		if showVersion || (len(args) == 1 && args[0] == "version") {
 			fmt.Println(formatVersion())
 			return nil
 		}
 
-		if servePort != "" {
-			return runDaemon(servePort)
+		if rootServePort != "" {
+			return runDaemon(rootServePort)
 		}
 
 		if len(args) == 1 {
@@ -59,6 +61,14 @@ transport security, BGP resilience, attack surface, and registration posture.`,
 		}
 
 		return cmd.Help()
+	},
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Display version, commit, and build information",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println(formatVersion())
 	},
 }
 
@@ -98,11 +108,13 @@ Fish:
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&customResolver, "resolver", "r", "", "custom DNS resolver (ip:port)")
 	rootCmd.PersistentFlags().DurationVarP(&globalTimeout, "timeout", "t", 25*time.Second, "global audit timeout")
-	rootCmd.Flags().StringVarP(&servePort, "port", "p", "", "run background health daemon on port (for container checks)")
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "C", "", "path to configuration file (.domain-doctor.yaml)")
+	rootCmd.Flags().StringVarP(&rootServePort, "port", "p", "", "run background health daemon on port (for container checks)")
 	rootCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "display version information")
 
-	serveCmd.Flags().StringVarP(&servePort, "port", "p", "8080", "port to serve health endpoint")
+	serveCmd.Flags().StringVarP(&serveCmdPort, "port", "p", "8080", "port to serve health endpoint")
 
+	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(scanCmd)
 	rootCmd.AddCommand(watchCmd)
 	rootCmd.AddCommand(snapshotCmd)
@@ -141,7 +153,7 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Start HTTP health daemon",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		port := servePort
+		port := serveCmdPort
 		if port == "" {
 			port = "8080"
 		}

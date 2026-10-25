@@ -12,6 +12,7 @@ import (
 
 type FlagDayCheck struct{}
 
+func (c *FlagDayCheck) ID() string       { return "DD-RES-003" }
 func (c *FlagDayCheck) Name() string     { return "resilience_flagday" }
 func (c *FlagDayCheck) Category() string { return "Resilience" }
 

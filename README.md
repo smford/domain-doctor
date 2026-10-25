@@ -205,41 +205,115 @@ domain-doctor export mydomain.com --format=hcl
 
 ## 🔍 Comprehensive Diagnostic Check Matrix (30 Audits)
 
-`domain-doctor` runs an authoritative-first test battery spanning 30 specialized audit engines across 6 core operational categories:
+`domain-doctor` runs an authoritative-first test battery spanning 30 specialized audit engines across 7 operational categories. Each check is assigned a permanent identifier (`DD-<CATEGORY>-<NUMBER>`). For detailed explanations, threat models, and remediations, see the [Rule Catalog](docs/rules.md).
 
-| Category | Diagnostic Check | RFC / Security Standard | Purpose & Threat Mitigation |
-| :--- | :--- | :--- | :--- |
-| **DNS** | **Authoritative Delegation** | RFC 1034 / 1035 | Validates NS parent-child delegation, glue records, and SOA serial synchronization. |
-| **DNS** | **Negative Caching** | RFC 2308 | Detects Anycast public resolver negative cache desync and calculates exact TTL countdowns. |
-| **DNS** | **Zone Transfer (AXFR)** | RFC 5936 | Detects open zone transfer vulnerabilities exposing internal DNS topology. |
-| **DNS** | **Open Recursion** | RFC 5358 | Verifies that authoritative nameservers refuse open recursive queries. |
-| **DNS** | **HTTPS / SVCB Records** | RFC 9460 | Audits Type 65 HTTPS / Type 64 SVCB records for HTTP/3 ALPN and Encrypted Client Hello (ECH). |
-| **DNS** | **Wildcard DNS Scope** | RFC 4592 | Detects wildcard `*.<domain>` records and audits impact on subdomain isolation and DMARC. |
-| **Mail** | **SPF Lookup Depth** | RFC 7208 | Recursively tallies DNS lookups against the 10-mechanism PermError ceiling. |
-| **Mail** | **DMARC Policy Alignment** | RFC 7489 | Audits enforcement mode (`p=reject`), subdomain policy (`sp`), and reporting URIs (`rua`). |
-| **Mail** | **DKIM Selectors** | RFC 6376 | Discovers and validates active DKIM public keys across common sending providers. |
-| **Mail** | **Mail STARTTLS** | RFC 3207 | Probes MX servers on port 25 for opportunistic TLS capability and cipher strength. |
-| **Mail** | **MTA-STS Inbound TLS** | RFC 8461 | Audits `_mta-sts` DNS records and verifies HTTPS policy modes (`enforce` vs `testing`). |
-| **Mail** | **SMTP TLSRPT** | RFC 8460 | Validates `_smtp._tls` reporting endpoints for automated inbound delivery failure telemetry. |
-| **Mail** | **BIMI Brand Icons** | BIMI v1 | Checks `default._bimi` TXT for SVG logos, VMC certificates, and strict DMARC prerequisites. |
-| **Security** | **DNSSEC Validation** | RFC 4033 / 4035 | Validates end-to-end cryptographic chain-of-trust (DS -> DNSKEY -> RRSIG). |
-| **Security** | **NSEC Zone Walkability** | RFC 4470 / 5155 | Probes NXDOMAIN denial-of-existence to detect zone walking vulnerability (NSEC vs NSEC3). |
-| **Security** | **DANE TLSA** | RFC 6698 / 7671 | Audits port 25 / port 443 TLSA records, ensuring cryptographically pinned certs under DNSSEC. |
-| **Security** | **CAA Policy** | RFC 8659 | Enforces authorized Certificate Authorities (`issue`, `issuewild`, `iodef`). |
-| **Security** | **TLS Health & Expiry** | NIST SP 800-52 | Evaluates web certificate expiration, SAN coverage, and deprecated cipher suites. |
-| **Security** | **Subdomain Takeover** | Common Cloud Signatures | Scans dangling CNAMEs against known cloud provider patterns (S3, GitHub Pages, Heroku, Azure). |
-| **Security** | **Defensive Domain Killswitch**| RFC 7505 | Audits non-sending/parked domains for Null MX (`0 .`), hard-fail SPF (`-all`), and reject DMARC. |
-| **Security** | **CDN Direct Origin Bypass** | Cloud Perimeter Defense | Compares CDN-proxied apex IPs against MX/origin host IPs to prevent WAF/DDoS bypass. |
-| **Security** | **PSL Cookie Isolation** | RFC 6265bis / PSL | Detects wildcard DNS / multi-tenant exposure to cross-subdomain cookie tossing and session fixation. |
-| **Security** | **HTTP Cookie Scope & Hygiene** | RFC 6265bis | Audits Set-Cookie headers for Supercookie PSL violations, over-scoped Domain attributes, __Host-/__Secure- prefixes, and SameSite enforcement. |
-| **Resilience**| **BGP ASN Diversity** | Team Cymru IP-to-ASN | Maps nameservers to BGP Autonomous Systems via DNS, exposing single-AS transit failures. |
-| **Resilience**| **ECS Geo-Steering** | RFC 7871 | Simulates EDNS Client Subnet queries across worldwide subnets to audit Anycast routing. |
-| **Resilience**| **DNS Flag Day Compliance** | DNS Flag Day 2020 | Tests EDNS0 buffer sizes (max 1232 bytes) to eliminate UDP packet fragmentation attacks. |
-| **Resilience**| **DNS Cookies** | RFC 7873 / 8749 | Probes nameservers for EDNS0 Server Cookies to mitigate amplification and spoofing attacks. |
-| **Registration**| **Public Suffix & eTLD+1**| publicsuffix.org | Classifies organizational domain boundaries, warns on direct suffix scans, and tracks private platform hosting. |
-| **Registration**| **RDAP Expiry & Lock** | RFC 9082 / 9083 | Audits domain registrar lifecycle, expiration runways, and transfer lock defense. |
-| **Threat** | **Certificate Transparency** | RFC 6962 | Queries real-time CT log telemetry via crt.sh to discover unmanaged or shadow subdomains. |
-| **Threat** | **Homoglyph & Punycode** | Unicode TR39 | Evaluates IDNA confusable characters and punycode representations against phishing lookalikes. |
+| Rule ID | Category | Diagnostic Check | RFC / Security Standard | Purpose & Threat Mitigation |
+| :--- | :--- | :--- | :--- | :--- |
+| **`DD-DNS-001`** | **DNS** | [**Authoritative Delegation**](docs/rules.md#dd-dns-001-authoritative-nameserver-redundancy) | RFC 1034 / 1035 | Validates NS parent-child delegation, glue records, and SOA serial synchronization. |
+| **`DD-DNS-002`** | **DNS** | [**Zone Transfer (AXFR)**](docs/rules.md#dd-dns-002-authoritative-zone-transfer-axfr) | RFC 5936 | Detects open zone transfer vulnerabilities exposing internal DNS topology. |
+| **`DD-DNS-003`** | **DNS** | [**Open Recursion**](docs/rules.md#dd-dns-003-open-dns-recursion) | RFC 5358 | Verifies that authoritative nameservers refuse open recursive queries. |
+| **`DD-DNS-004`** | **DNS** | [**HTTPS / SVCB Records**](docs/rules.md#dd-dns-004-https--svcb-service-binding) | RFC 9460 | Audits Type 65 HTTPS / Type 64 SVCB records for HTTP/3 ALPN and Encrypted Client Hello (ECH). |
+| **`DD-DNS-005`** | **DNS** | [**Wildcard DNS Scope**](docs/rules.md#dd-dns-005-wildcard-dns-scope) | RFC 4592 | Detects wildcard `*.<domain>` records and audits impact on subdomain isolation and DMARC. |
+| **`DD-NC-001`** | **NegativeCache** | [**Negative Caching**](docs/rules.md#dd-nc-001-rfc-2308-negative-cache-staleness) | RFC 2308 | Detects Anycast public resolver negative cache desync and calculates exact TTL countdowns. |
+| **`DD-MAIL-001`** | **Mail** | [**SPF Lookup Depth**](docs/rules.md#dd-mail-001-spf-mechanism-lookup-depth) | RFC 7208 | Recursively tallies DNS lookups against the 10-mechanism PermError ceiling. |
+| **`DD-MAIL-002`** | **Mail** | [**DMARC Policy Alignment**](docs/rules.md#dd-mail-002-dmarc-policy-enforcement) | RFC 7489 | Audits enforcement mode (`p=reject`), subdomain policy (`sp`), and reporting URIs (`rua`). |
+| **`DD-MAIL-003`** | **Mail** | [**DKIM Selectors**](docs/rules.md#dd-mail-003-dkim-selector-verification) | RFC 6376 | Discovers and validates active DKIM public keys across common sending providers. |
+| **`DD-MAIL-004`** | **Mail** | [**Mail STARTTLS**](docs/rules.md#dd-mail-004-smtp-starttls-encryption) | RFC 3207 | Probes MX servers on port 25 for opportunistic TLS capability and cipher strength. |
+| **`DD-MAIL-005`** | **Mail** | [**MTA-STS Inbound TLS**](docs/rules.md#dd-mail-005-mta-sts-inbound-tls-policy) | RFC 8461 | Audits `_mta-sts` DNS records and verifies HTTPS policy modes (`enforce` vs `testing`). |
+| **`DD-MAIL-006`** | **Mail** | [**BIMI Brand Icons**](docs/rules.md#dd-mail-006-bimi-brand-indicators) | BIMI v1 | Checks `default._bimi` TXT for SVG logos, VMC certificates, and strict DMARC prerequisites. |
+| **`DD-SEC-001`** | **Security** | [**DNSSEC Validation**](docs/rules.md#dd-sec-001-dnssec-chain-of-trust) | RFC 4033 / 4035 | Validates end-to-end cryptographic chain-of-trust (DS -> DNSKEY -> RRSIG). |
+| **`DD-SEC-002`** | **Security** | [**NSEC Zone Walkability**](docs/rules.md#dd-sec-002-dnssec-zone-walkability-nsec) | RFC 4470 / 5155 | Probes NXDOMAIN denial-of-existence to detect zone walking vulnerability (NSEC vs NSEC3). |
+| **`DD-SEC-003`** | **Security** | [**DANE TLSA**](docs/rules.md#dd-sec-003-dane-tlsa-cryptographic-binding) | RFC 6698 / 7671 | Audits port 25 / port 443 TLSA records, ensuring cryptographically pinned certs under DNSSEC. |
+| **`DD-SEC-004`** | **Security** | [**CAA Policy**](docs/rules.md#dd-sec-004-certificate-authority-authorization-caa) | RFC 8659 | Enforces authorized Certificate Authorities (`issue`, `issuewild`, `iodef`). |
+| **`DD-SEC-005`** | **Security** | [**TLS Health & Expiry**](docs/rules.md#dd-sec-005-tls-certificate-hygiene--runway) | NIST SP 800-52 | Evaluates web certificate expiration, SAN coverage, and deprecated cipher suites. |
+| **`DD-SEC-006`** | **Security** | [**Subdomain Takeover**](docs/rules.md#dd-sec-006-subdomain-takeover-defense) | Cloud Signatures | Scans dangling CNAMEs against known cloud provider patterns (S3, GitHub Pages, Heroku, Azure). |
+| **`DD-SEC-007`** | **Security** | [**Defensive Domain Killswitch**](docs/rules.md#dd-sec-007-defensive-parked-domain-killswitch) | RFC 7505 | Audits non-sending/parked domains for Null MX (`0 .`), hard-fail SPF (`-all`), and reject DMARC. |
+| **`DD-SEC-008`** | **Security** | [**CDN Direct Origin Bypass**](docs/rules.md#dd-sec-008-cdn-direct-to-origin-bypass) | Cloud Perimeter | Compares CDN-proxied apex IPs against MX/origin host IPs to prevent WAF/DDoS bypass. |
+| **`DD-SEC-009`** | **Security** | [**PSL Cookie Isolation**](docs/rules.md#dd-sec-009-psl-cookie-isolation-boundary) | RFC 6265bis / PSL | Detects wildcard DNS / multi-tenant exposure to cross-subdomain cookie tossing and session fixation. |
+| **`DD-SEC-010`** | **Security** | [**HTTP Cookie Scope & Hygiene**](docs/rules.md#dd-sec-010-http-cookie-scope--rfc-6265bis-hygiene) | RFC 6265bis | Audits Set-Cookie headers for Supercookie PSL violations, over-scoped Domain attributes, and __Host- prefixes. |
+| **`DD-RES-001`** | **Resilience**| [**BGP ASN Diversity**](docs/rules.md#dd-res-001-bgp-autonomous-system-diversity) | Team Cymru ASN | Maps nameservers to BGP Autonomous Systems via DNS, exposing single-AS transit failures. |
+| **`DD-RES-002`** | **Resilience**| [**ECS Geo-Steering**](docs/rules.md#dd-res-002-edns-client-subnet-geo-steering) | RFC 7871 | Simulates EDNS Client Subnet queries across worldwide subnets to audit Anycast routing. |
+| **`DD-RES-003`** | **Resilience**| [**DNS Flag Day Compliance**](docs/rules.md#dd-res-003-dns-flag-day-2020-buffer-compliance) | DNS Flag Day 2020 | Tests EDNS0 buffer sizes (max 1232 bytes) to eliminate UDP packet fragmentation attacks. |
+| **`DD-RES-004`** | **Resilience**| [**DNS Cookies**](docs/rules.md#dd-res-004-dns-cookies-amplification-defense) | RFC 7873 / 8749 | Probes nameservers for EDNS0 Server Cookies to mitigate amplification and spoofing attacks. |
+| **`DD-REG-001`** | **Registration**| [**Public Suffix & eTLD+1**](docs/rules.md#dd-reg-001-public-suffix-list-boundary) | publicsuffix.org | Classifies organizational domain boundaries, warns on direct suffix scans, and tracks private platform hosting. |
+| **`DD-REG-002`** | **Registration**| [**RDAP Expiry & Lock**](docs/rules.md#dd-reg-002-domain-registration-runway--transfer-lock) | RFC 9082 / 9083 | Audits domain registrar lifecycle, expiration runways, and transfer lock defense. |
+| **`DD-THR-001`** | **Threat** | [**Certificate Transparency**](docs/rules.md#dd-thr-001-certificate-transparency-shadow-discovery) | RFC 6962 | Queries real-time CT log telemetry via crt.sh to discover unmanaged or shadow subdomains. |
+| **`DD-THR-002`** | **Threat** | [**Homoglyph & Punycode**](docs/rules.md#dd-thr-002-homoglyph--bitsquatting-phishing-defense) | Unicode TR39 | Evaluates IDNA confusable characters and punycode representations against phishing lookalikes. |
+
+---
+
+## ⚙️ Configuration File (`.domain-doctor.yaml`)
+
+Customize enabled checks, suppress rules, or override finding severities via `.domain-doctor.yaml`:
+
+```yaml
+version: 1
+
+rules:
+  # Enable rules by ID, wildcard prefix, or category
+  enable:
+    - "*"
+
+  # Disable specific rules or categories
+  disable:
+    - DD-THR-001       # Skip shadow CT log subdomain discovery
+    - DD-RES-001       # Single-cloud ASN is expected for this domain
+
+  # Override finding severity thresholds
+  severity_overrides:
+    DD-MAIL-005: CRIT  # Escalate missing MTA-STS policy to Critical
+    DD-SEC-004: INFO   # Demote missing CAA to Informational
+
+settings:
+  timeout: 30s
+  resolver: "1.1.1.1:53"
+```
+
+Pass a custom configuration file via `--config`:
+
+```bash
+domain-doctor scan example.com --config .custom-policy.yaml
+domain-doctor lint example.com -C .custom-policy.yaml
+```
+
+---
+
+## 🛡️ Continuous GitHub Actions SARIF Scanning
+
+Deploy automated perimeter monitoring on a daily cron schedule. Findings are injected directly into GitHub's **Security → Code Scanning Alerts** tab via SARIF v2.1.0:
+
+```yaml
+name: Domain Perimeter Security Audit (SARIF)
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Run daily at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  domain-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install domain-doctor
+        run: |
+          VERSION="0.2.0"
+          curl -sSL "https://github.com/smford/domain-doctor/releases/download/v${VERSION}/domain-doctor_${VERSION}_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin domain-doctor
+
+      - name: Run Domain Lint
+        run: |
+          domain-doctor lint stephenford.org --format sarif --output domain-doctor.sarif || true
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: domain-doctor.sarif
+          category: domain-doctor
+```
 
 ---
 
@@ -247,15 +321,16 @@ domain-doctor export mydomain.com --format=hcl
 
 | Subcommand | Description |
 | :--- | :--- |
-| `scan <domain>` | Run full diagnostic suite with terminal table output (`--json`, `--tui`, `--mermaid`) |
+| `scan <domain>` | Run full diagnostic suite with terminal table output (`--json`, `--tui`, `--mermaid`, `--category`, `--severity`, `--quiet`, `--config`) |
+| `lint <domain>` | Headless CI/CD policy audit with exit codes and SARIF / Markdown output (`--policy=strict`, `--format=sarif`, `--output=<file>`, `--config`) |
 | `watch <domain>` | Continuous polling TUI dashboard for tracking live DNS cutovers (`--interval=3s`) |
 | `snapshot <domain>` | Export current zone records and diagnostic findings to structured JSON |
 | `diff <file.json> <domain>` | Compare a previously captured JSON snapshot against live DNS |
-| `lint <domain>` | CI/CD policy audit with exit codes and SARIF / Markdown output (`--policy=strict`) |
-| `diagram <domain>` | Generate Mermaid diagrams (`--type=delegation|spf|mail`) |
+| `diagram <domain>` | Generate Mermaid diagrams (`--type=delegation\|spf\|mail`) |
 | `export <domain>` | Export discovered records as standard RFC 1035 BIND or Terraform Route53 HCL |
 | `audit-drift <domain>` | Compare declared Route53/Cloudflare resources in `terraform.tfstate` against live DNS |
-| `serve` | Run HTTP `/healthz` daemon on port 8080 |
+| `version` | Display version, commit, and build information |
+| `serve` | Run HTTP `/healthz` daemon on port 8080 (`--port 8080`) |
 | `completion <shell>` | Generate shell autocompletions (`bash`, `zsh`, `fish`, `powershell`) |
 
 ---

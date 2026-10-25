@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/smford/domain-doctor/internal/checks"
+	"github.com/smford/domain-doctor/internal/config"
 	"github.com/smford/domain-doctor/internal/diagram"
 	"github.com/smford/domain-doctor/internal/engine"
 	"github.com/smford/domain-doctor/internal/ui/cli"
@@ -44,7 +45,20 @@ func init() {
 }
 
 func runScan(ctx context.Context, domain string, asJSON, asTUI, asMermaid bool) error {
-	eng := engine.NewEngine(globalTimeout, 12)
+	cfg, err := config.Load(configFile)
+	if err != nil {
+		return fmt.Errorf("configuration error: %w", err)
+	}
+
+	timeout := cfg.ParseTimeout(globalTimeout)
+	resolver := customResolver
+	if resolver == "" && cfg.Settings.Resolver != "" {
+		resolver = cfg.Settings.Resolver
+	}
+
+	eng := engine.NewEngine(timeout, 12)
+	eng.SetRuleFilter(cfg.IsRuleEnabled)
+	eng.SetSeverityOverrides(cfg.Rules.SeverityOverrides)
 	checks.RegisterAll(eng)
 
 	if asTUI {

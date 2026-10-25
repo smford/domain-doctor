@@ -13,6 +13,7 @@ import (
 
 type CTLogCheck struct{}
 
+func (c *CTLogCheck) ID() string       { return "DD-THR-001" }
 func (c *CTLogCheck) Name() string     { return "threat_ct_logs" }
 func (c *CTLogCheck) Category() string { return "Threat" }
 

@@ -13,6 +13,7 @@ import (
 
 type DKIMCheck struct{}
 
+func (c *DKIMCheck) ID() string       { return "DD-MAIL-003" }
 func (c *DKIMCheck) Name() string     { return "mail_dkim" }
 func (c *DKIMCheck) Category() string { return "Mail" }
 

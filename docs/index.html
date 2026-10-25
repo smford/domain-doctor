@@ -100,6 +100,7 @@
       <a href="#" class="logo"><span>🩺</span> domain-doctor</a>
       <div class="nav-links">
         <a href="#features">Features</a>
+        <a href="rules.md">Rule Catalog</a>
         <a href="#diagrams">Diagrams</a>
         <a href="#examples">Examples</a>
         <a href="#reference">CLI Reference</a>
@@ -254,6 +255,14 @@ flowchart TD
           <tr>
             <td><code>domain-doctor audit-drift &lt;domain&gt;</code></td>
             <td>Compare declared Route53/Cloudflare resources in <code>terraform.tfstate</code> against live DNS</td>
+          </tr>
+          <tr>
+            <td><code>domain-doctor version</code></td>
+            <td>Display version number, git commit hash, and build date metadata</td>
+          </tr>
+          <tr>
+            <td><code>domain-doctor serve</code></td>
+            <td>Run HTTP <code>/healthz</code> daemon for container readiness checks (<code>--port=8080</code>)</td>
           </tr>
         </tbody>
       </table>

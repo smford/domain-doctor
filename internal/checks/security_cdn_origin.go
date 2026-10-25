@@ -13,6 +13,7 @@ import (
 
 type CDNOriginCheck struct{}
 
+func (c *CDNOriginCheck) ID() string       { return "DD-SEC-008" }
 func (c *CDNOriginCheck) Name() string     { return "security_cdn_origin" }
 func (c *CDNOriginCheck) Category() string { return "Security" }
 

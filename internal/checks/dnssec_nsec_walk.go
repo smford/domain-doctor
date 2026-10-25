@@ -12,6 +12,7 @@ import (
 
 type NSECWalkCheck struct{}
 
+func (c *NSECWalkCheck) ID() string       { return "DD-SEC-002" }
 func (c *NSECWalkCheck) Name() string     { return "dnssec_nsec_walk" }
 func (c *NSECWalkCheck) Category() string { return "Security" }
 

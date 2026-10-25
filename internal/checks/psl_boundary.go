@@ -11,6 +11,7 @@ import (
 
 type PSLBoundaryCheck struct{}
 
+func (c *PSLBoundaryCheck) ID() string       { return "DD-REG-001" }
 func (c *PSLBoundaryCheck) Name() string     { return "psl_boundary" }
 func (c *PSLBoundaryCheck) Category() string { return "Registration" }
 

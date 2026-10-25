@@ -16,6 +16,7 @@ import (
 
 type MTASTSCheck struct{}
 
+func (c *MTASTSCheck) ID() string       { return "DD-MAIL-005" }
 func (c *MTASTSCheck) Name() string     { return "mail_mtasts" }
 func (c *MTASTSCheck) Category() string { return "Mail" }
 

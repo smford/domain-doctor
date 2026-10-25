@@ -14,6 +14,7 @@ import (
 
 type CookieScopeCheck struct{}
 
+func (c *CookieScopeCheck) ID() string       { return "DD-SEC-010" }
 func (c *CookieScopeCheck) Name() string     { return "security_cookie_scope" }
 func (c *CookieScopeCheck) Category() string { return "Security" }
 

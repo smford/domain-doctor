@@ -12,6 +12,7 @@ import (
 
 type DefensiveDomainCheck struct{}
 
+func (c *DefensiveDomainCheck) ID() string       { return "DD-SEC-007" }
 func (c *DefensiveDomainCheck) Name() string     { return "security_defensive" }
 func (c *DefensiveDomainCheck) Category() string { return "Security" }
 

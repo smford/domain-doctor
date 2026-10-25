@@ -1,0 +1,32 @@
+# domain-doctor configuration file
+# Default path: .domain-doctor.yaml
+version: 1
+
+rules:
+  # Rules to enable. Can be specific rule IDs ("DD-DNS-001"), wildcard patterns ("DD-DNS-*"),
+  # or entire categories ("Mail", "Security"). Use ["*"] to run all rules.
+  enable:
+    - "*"
+
+  # Rules to explicitly disable. Overrides 'enable'.
+  disable:
+    # - DD-THR-001   # Skip shadow subdomain search via Certificate Transparency logs
+    # - DD-RES-001   # Skip multi-ASN diversity check if hosted on single cloud provider
+
+  # Override finding severity for specific rules (CRIT, WARN, INFO, PASS)
+  severity_overrides:
+    # DD-MAIL-005: CRIT   # Escalate missing MTA-STS to Critical
+    # DD-SEC-004: INFO    # Demote missing CAA records to Informational
+
+settings:
+  # Global audit timeout duration
+  timeout: 25s
+
+  # Custom authoritative or recursive DNS resolver (ip:port). Leave blank for default Anycast resolvers.
+  resolver: ""
+
+  # Additional custom DKIM selectors to probe in addition to the standard dictionary
+  custom_dkim_selectors:
+    - default
+    - google
+    - k1

@@ -1,0 +1,40 @@
+name: Domain Perimeter Security Audit (SARIF)
+
+on:
+  schedule:
+    # Run daily at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  domain-audit:
+    name: Audit Domain Perimeter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install domain-doctor
+        run: |
+          VERSION="0.2.0"
+          curl -sSL "https://github.com/smford/domain-doctor/releases/download/v${VERSION}/domain-doctor_${VERSION}_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin domain-doctor
+          domain-doctor version
+
+      - name: Execute Domain Lint and Generate SARIF
+        run: |
+          # Replace 'stephenford.org' with your target apex domain.
+          # Use --config to specify custom policy rules or suppressions.
+          domain-doctor lint stephenford.org \
+            --format sarif \
+            --output domain-doctor.sarif || true
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: domain-doctor.sarif
+          category: domain-doctor

@@ -12,6 +12,7 @@ import (
 
 type BIMICheck struct{}
 
+func (c *BIMICheck) ID() string       { return "DD-MAIL-006" }
 func (c *BIMICheck) Name() string     { return "mail_bimi" }
 func (c *BIMICheck) Category() string { return "Mail" }
 

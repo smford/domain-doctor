@@ -13,6 +13,7 @@ import (
 
 type HomographCheck struct{}
 
+func (c *HomographCheck) ID() string       { return "DD-THR-002" }
 func (c *HomographCheck) Name() string     { return "threat_homograph" }
 func (c *HomographCheck) Category() string { return "Threat" }
 

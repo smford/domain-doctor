@@ -17,6 +17,7 @@ import (
 
 type DNSDelegationCheck struct{}
 
+func (c *DNSDelegationCheck) ID() string       { return "DD-DNS-001" }
 func (c *DNSDelegationCheck) Name() string     { return "dns_delegation" }
 func (c *DNSDelegationCheck) Category() string { return "DNS" }
 

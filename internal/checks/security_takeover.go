@@ -12,6 +12,7 @@ import (
 
 type SubdomainTakeoverCheck struct{}
 
+func (c *SubdomainTakeoverCheck) ID() string       { return "DD-SEC-006" }
 func (c *SubdomainTakeoverCheck) Name() string     { return "security_takeover" }
 func (c *SubdomainTakeoverCheck) Category() string { return "Security" }
 

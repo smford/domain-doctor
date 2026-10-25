@@ -13,6 +13,7 @@ import (
 
 type RDAPCheck struct{}
 
+func (c *RDAPCheck) ID() string       { return "DD-REG-002" }
 func (c *RDAPCheck) Name() string     { return "registration_rdap" }
 func (c *RDAPCheck) Category() string { return "Registration" }
 

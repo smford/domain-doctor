@@ -141,7 +141,11 @@ func PrintReportFiltered(report *engine.DiagnosticReport, categoryFilter []strin
 		}
 		for _, f := range findings {
 			badge := formatBadge(f.Severity)
-			fmt.Printf("  %s %s%s%s: %s\n", badge, colorBold, f.ID, colorReset, f.Summary)
+			ruleTag := ""
+			if f.RuleID != "" {
+				ruleTag = fmt.Sprintf(" (%s)", f.RuleID)
+			}
+			fmt.Printf("  %s %s%s%s%s: %s\n", badge, colorBold, f.ID, ruleTag, colorReset, f.Summary)
 			if f.Detail != "" && !quiet {
 				fmt.Printf("    %s%s%s\n", colorGray, f.Detail, colorReset)
 			}

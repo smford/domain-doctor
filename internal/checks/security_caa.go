@@ -12,6 +12,7 @@ import (
 
 type CAACheck struct{}
 
+func (c *CAACheck) ID() string       { return "DD-SEC-004" }
 func (c *CAACheck) Name() string     { return "security_caa" }
 func (c *CAACheck) Category() string { return "Security" }
 

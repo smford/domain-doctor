@@ -13,6 +13,7 @@ import (
 
 type DMARCCheck struct{}
 
+func (c *DMARCCheck) ID() string       { return "DD-MAIL-002" }
 func (c *DMARCCheck) Name() string     { return "mail_dmarc" }
 func (c *DMARCCheck) Category() string { return "Mail" }
 

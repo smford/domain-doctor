@@ -13,6 +13,7 @@ import (
 
 type ECSGeoCheck struct{}
 
+func (c *ECSGeoCheck) ID() string       { return "DD-RES-002" }
 func (c *ECSGeoCheck) Name() string     { return "resilience_ecs" }
 func (c *ECSGeoCheck) Category() string { return "Resilience" }
 

@@ -11,6 +11,7 @@ import (
 
 type ZoneTransferCheck struct{}
 
+func (c *ZoneTransferCheck) ID() string       { return "DD-DNS-002" }
 func (c *ZoneTransferCheck) Name() string     { return "dns_zone_transfer" }
 func (c *ZoneTransferCheck) Category() string { return "DNS" }
 

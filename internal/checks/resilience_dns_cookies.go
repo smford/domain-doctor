@@ -14,6 +14,7 @@ import (
 
 type DNSCookiesCheck struct{}
 
+func (c *DNSCookiesCheck) ID() string       { return "DD-RES-004" }
 func (c *DNSCookiesCheck) Name() string     { return "resilience_dns_cookies" }
 func (c *DNSCookiesCheck) Category() string { return "Resilience" }
 

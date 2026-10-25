@@ -15,6 +15,7 @@ import (
 
 type MailSTARTTLSCheck struct{}
 
+func (c *MailSTARTTLSCheck) ID() string       { return "DD-MAIL-004" }
 func (c *MailSTARTTLSCheck) Name() string     { return "mail_starttls" }
 func (c *MailSTARTTLSCheck) Category() string { return "Mail" }
 

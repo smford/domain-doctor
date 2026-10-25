@@ -12,6 +12,7 @@ import (
 
 type PSLCookieIsolationCheck struct{}
 
+func (c *PSLCookieIsolationCheck) ID() string       { return "DD-SEC-009" }
 func (c *PSLCookieIsolationCheck) Name() string     { return "psl_cookie_isolation" }
 func (c *PSLCookieIsolationCheck) Category() string { return "Security" }
 

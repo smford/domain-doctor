@@ -15,6 +15,7 @@ import (
 )
 
 type Check interface {
+	ID() string
 	Name() string
 	Category() string
 	Run(ctx context.Context, execCtx *ExecutionContext) error
@@ -71,9 +72,11 @@ func (c *ExecutionContext) SetSOA(soa *ZoneSOA) {
 }
 
 type Engine struct {
-	checks      []Check
-	workerLimit int
-	timeout     time.Duration
+	checks            []Check
+	workerLimit       int
+	timeout           time.Duration
+	ruleFilter        func(ruleID, category string) bool
+	severityOverrides map[string]Severity
 }
 
 func NewEngine(timeout time.Duration, workerLimit int) *Engine {
@@ -84,9 +87,33 @@ func NewEngine(timeout time.Duration, workerLimit int) *Engine {
 		timeout = 30 * time.Second
 	}
 	return &Engine{
-		checks:      make([]Check, 0),
-		workerLimit: workerLimit,
-		timeout:     timeout,
+		checks:            make([]Check, 0),
+		workerLimit:       workerLimit,
+		timeout:           timeout,
+		severityOverrides: make(map[string]Severity),
+	}
+}
+
+func (e *Engine) SetRuleFilter(fn func(ruleID, category string) bool) {
+	e.ruleFilter = fn
+}
+
+func (e *Engine) SetSeverityOverrides(overrides map[string]string) {
+	if e.severityOverrides == nil {
+		e.severityOverrides = make(map[string]Severity)
+	}
+	for k, v := range overrides {
+		key := strings.ToUpper(strings.TrimSpace(k))
+		switch strings.ToUpper(strings.TrimSpace(v)) {
+		case "CRIT", "CRITICAL":
+			e.severityOverrides[key] = SeverityCritical
+		case "WARN", "WARNING":
+			e.severityOverrides[key] = SeverityWarning
+		case "INFO":
+			e.severityOverrides[key] = SeverityInfo
+		case "PASS":
+			e.severityOverrides[key] = SeverityPass
+		}
 	}
 }
 
@@ -104,12 +131,15 @@ func (e *Engine) Run(parentCtx context.Context, domain string, customResolver st
 	// Step 1: Discover Authoritative Nameservers and basic SOA
 	e.bootstrapDomain(ctx, execCtx, customResolver)
 
-	// Step 2: Concurrently run all registered checks
+	// Step 2: Concurrently run all registered checks (filtered by ruleFilter if set)
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(e.workerLimit)
 
 	for _, check := range e.checks {
 		chk := check
+		if e.ruleFilter != nil && !e.ruleFilter(chk.ID(), chk.Category()) {
+			continue
+		}
 		g.Go(func() error {
 			if gCtx.Err() != nil {
 				return gCtx.Err()
@@ -118,6 +148,7 @@ func (e *Engine) Run(parentCtx context.Context, domain string, customResolver st
 			defer func() {
 				if r := recover(); r != nil {
 					execCtx.AddFinding(Finding{
+						RuleID:   chk.ID(),
 						ID:       fmt.Sprintf("%s-PANIC", chk.Name()),
 						Category: chk.Category(),
 						Severity: SeverityWarning,
@@ -130,6 +161,7 @@ func (e *Engine) Run(parentCtx context.Context, domain string, customResolver st
 			if err := chk.Run(gCtx, execCtx); err != nil {
 				// Resilient error isolation: individual network failures add informational/warning findings
 				execCtx.AddFinding(Finding{
+					RuleID:   chk.ID(),
 					ID:       fmt.Sprintf("%s-EXEC-ERR", chk.Name()),
 					Category: chk.Category(),
 					Severity: SeverityInfo,
@@ -142,6 +174,15 @@ func (e *Engine) Run(parentCtx context.Context, domain string, customResolver st
 	}
 
 	_ = g.Wait()
+
+	// Step 3: Apply severity overrides if configured
+	if len(e.severityOverrides) > 0 {
+		for i := range execCtx.Findings {
+			if ov, ok := e.severityOverrides[strings.ToUpper(execCtx.Findings[i].RuleID)]; ok {
+				execCtx.Findings[i].Severity = ov
+			}
+		}
+	}
 
 	report := &DiagnosticReport{
 		Domain:         execCtx.Domain,

@@ -22,6 +22,7 @@ type Remediation struct {
 }
 
 type Finding struct {
+	RuleID      string       `json:"rule_id,omitempty"`
 	ID          string       `json:"id"`
 	Category    string       `json:"category"` // "DNS", "Mail", "Security", "Resilience", "Threat", "Registration", "NegativeCache"
 	Severity    Severity     `json:"severity"`

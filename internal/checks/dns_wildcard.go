@@ -14,6 +14,7 @@ import (
 
 type WildcardCheck struct{}
 
+func (c *WildcardCheck) ID() string       { return "DD-DNS-005" }
 func (c *WildcardCheck) Name() string     { return "dns_wildcard" }
 func (c *WildcardCheck) Category() string { return "DNS" }
 

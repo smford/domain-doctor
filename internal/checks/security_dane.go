@@ -12,6 +12,7 @@ import (
 
 type DANECheck struct{}
 
+func (c *DANECheck) ID() string       { return "DD-SEC-003" }
 func (c *DANECheck) Name() string     { return "security_dane" }
 func (c *DANECheck) Category() string { return "Security" }
 

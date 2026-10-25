@@ -13,6 +13,7 @@ import (
 
 type RecursionCheck struct{}
 
+func (c *RecursionCheck) ID() string       { return "DD-DNS-003" }
 func (c *RecursionCheck) Name() string     { return "dns_recursion" }
 func (c *RecursionCheck) Category() string { return "DNS" }
 

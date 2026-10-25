@@ -12,6 +12,7 @@ import (
 
 type DNSSECCheck struct{}
 
+func (c *DNSSECCheck) ID() string       { return "DD-SEC-001" }
 func (c *DNSSECCheck) Name() string     { return "dnssec" }
 func (c *DNSSECCheck) Category() string { return "Security" }
 

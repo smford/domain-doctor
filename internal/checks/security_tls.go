@@ -14,6 +14,7 @@ import (
 
 type TLSHealthCheck struct{}
 
+func (c *TLSHealthCheck) ID() string       { return "DD-SEC-005" }
 func (c *TLSHealthCheck) Name() string     { return "security_tls" }
 func (c *TLSHealthCheck) Category() string { return "Security" }
 
