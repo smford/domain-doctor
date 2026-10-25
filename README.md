@@ -203,6 +203,42 @@ domain-doctor export mydomain.com --format=hcl
 
 ---
 
+## 🔍 Comprehensive Diagnostic Check Matrix (27 Audits)
+
+`domain-doctor` runs an authoritative-first test battery spanning 27 specialized audit engines across 6 core operational categories:
+
+| Category | Diagnostic Check | RFC / Security Standard | Purpose & Threat Mitigation |
+| :--- | :--- | :--- | :--- |
+| **DNS** | **Authoritative Delegation** | RFC 1034 / 1035 | Validates NS parent-child delegation, glue records, and SOA serial synchronization. |
+| **DNS** | **Negative Caching** | RFC 2308 | Detects Anycast public resolver negative cache desync and calculates exact TTL countdowns. |
+| **DNS** | **Zone Transfer (AXFR)** | RFC 5936 | Detects open zone transfer vulnerabilities exposing internal DNS topology. |
+| **DNS** | **Open Recursion** | RFC 5358 | Verifies that authoritative nameservers refuse open recursive queries. |
+| **DNS** | **HTTPS / SVCB Records** | RFC 9460 | Audits Type 65 HTTPS / Type 64 SVCB records for HTTP/3 ALPN and Encrypted Client Hello (ECH). |
+| **DNS** | **Wildcard DNS Scope** | RFC 4592 | Detects wildcard `*.<domain>` records and audits impact on subdomain isolation and DMARC. |
+| **Mail** | **SPF Lookup Depth** | RFC 7208 | Recursively tallies DNS lookups against the 10-mechanism PermError ceiling. |
+| **Mail** | **DMARC Policy Alignment** | RFC 7489 | Audits enforcement mode (`p=reject`), subdomain policy (`sp`), and reporting URIs (`rua`). |
+| **Mail** | **DKIM Selectors** | RFC 6376 | Discovers and validates active DKIM public keys across common sending providers. |
+| **Mail** | **Mail STARTTLS** | RFC 3207 | Probes MX servers on port 25 for opportunistic TLS capability and cipher strength. |
+| **Mail** | **MTA-STS Inbound TLS** | RFC 8461 | Audits `_mta-sts` DNS records and verifies HTTPS policy modes (`enforce` vs `testing`). |
+| **Mail** | **SMTP TLSRPT** | RFC 8460 | Validates `_smtp._tls` reporting endpoints for automated inbound delivery failure telemetry. |
+| **Mail** | **BIMI Brand Icons** | BIMI v1 | Checks `default._bimi` TXT for SVG logos, VMC certificates, and strict DMARC prerequisites. |
+| **Security** | **DNSSEC Validation** | RFC 4033 / 4035 | Validates end-to-end cryptographic chain-of-trust (DS -> DNSKEY -> RRSIG). |
+| **Security** | **NSEC Zone Walkability** | RFC 4470 / 5155 | Probes NXDOMAIN denial-of-existence to detect zone walking vulnerability (NSEC vs NSEC3). |
+| **Security** | **DANE TLSA** | RFC 6698 / 7671 | Audits port 25 / port 443 TLSA records, ensuring cryptographically pinned certs under DNSSEC. |
+| **Security** | **CAA Policy** | RFC 8659 | Enforces authorized Certificate Authorities (`issue`, `issuewild`, `iodef`). |
+| **Security** | **TLS Health & Expiry** | NIST SP 800-52 | Evaluates web certificate expiration, SAN coverage, and deprecated cipher suites. |
+| **Security** | **Subdomain Takeover** | Common Cloud Signatures | Scans dangling CNAMEs against known cloud provider patterns (S3, GitHub Pages, Heroku, Azure). |
+| **Security** | **Defensive Domain Killswitch**| RFC 7505 | Audits non-sending/parked domains for Null MX (`0 .`), hard-fail SPF (`-all`), and reject DMARC. |
+| **Security** | **CDN Direct Origin Bypass** | Cloud Perimeter Defense | Compares CDN-proxied apex IPs against MX/origin host IPs to prevent WAF/DDoS bypass. |
+| **Resilience**| **BGP ASN Diversity** | Team Cymru IP-to-ASN | Maps nameservers to BGP Autonomous Systems via DNS, exposing single-AS transit failures. |
+| **Resilience**| **ECS Geo-Steering** | RFC 7871 | Simulates EDNS Client Subnet queries across worldwide subnets to audit Anycast routing. |
+| **Resilience**| **DNS Flag Day Compliance** | DNS Flag Day 2020 | Tests EDNS0 buffer sizes (max 1232 bytes) to eliminate UDP packet fragmentation attacks. |
+| **Resilience**| **DNS Cookies** | RFC 7873 / 8749 | Probes nameservers for EDNS0 Server Cookies to mitigate amplification and spoofing attacks. |
+| **Threat** | **Certificate Transparency** | RFC 6962 | Queries real-time CT log telemetry via crt.sh to discover unmanaged or shadow subdomains. |
+| **Threat** | **Homoglyph & Punycode** | Unicode TR39 | Evaluates IDNA confusable characters and punycode representations against phishing lookalikes. |
+
+---
+
 ## 🛠 Command Reference
 
 | Subcommand | Description |

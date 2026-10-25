@@ -22,6 +22,8 @@ type DNSProber interface {
 	QueryWithDO(server string, qname string, qtype uint16) (*dns.Msg, time.Duration, error)
 	QueryWithSubnet(server string, qname string, qtype uint16, clientIP net.IP) (*dns.Msg, time.Duration, error)
 	QueryTCP(server string, qname string, qtype uint16) (*dns.Msg, time.Duration, error)
+	QueryWithCustomEDNS(server string, qname string, qtype uint16, bufSize uint16, do bool) (*dns.Msg, time.Duration, error)
+	QueryWithCookie(server string, qname string, qtype uint16, clientCookieHex string) (*dns.Msg, string, time.Duration, error)
 	CheckAXFR(server string, domain string) (bool, int, error)
 }
 
@@ -137,6 +139,59 @@ func (p *DefaultDNSProber) QueryWithSubnet(server string, qname string, qtype ui
 
 	in, rtt, err := c.Exchange(m, ensurePort(server))
 	return in, rtt, err
+}
+
+func (p *DefaultDNSProber) QueryWithCustomEDNS(server string, qname string, qtype uint16, bufSize uint16, do bool) (*dns.Msg, time.Duration, error) {
+	c := new(dns.Client)
+	c.Timeout = p.Timeout
+
+	m := new(dns.Msg)
+	m.SetQuestion(dns.Fqdn(qname), qtype)
+	m.RecursionDesired = false
+	m.SetEdns0(bufSize, do)
+
+	in, rtt, err := c.Exchange(m, ensurePort(server))
+	return in, rtt, err
+}
+
+func (p *DefaultDNSProber) QueryWithCookie(server string, qname string, qtype uint16, clientCookieHex string) (*dns.Msg, string, time.Duration, error) {
+	c := new(dns.Client)
+	c.Timeout = p.Timeout
+
+	m := new(dns.Msg)
+	m.SetQuestion(dns.Fqdn(qname), qtype)
+	m.RecursionDesired = false
+
+	m.SetEdns0(1232, false)
+	opt := m.IsEdns0()
+	if opt != nil {
+		cookieOpt := &dns.EDNS0_COOKIE{
+			Code:   dns.EDNS0COOKIE,
+			Cookie: clientCookieHex,
+		}
+		opt.Option = append(opt.Option, cookieOpt)
+	}
+
+	in, rtt, err := c.Exchange(m, ensurePort(server))
+	if err != nil || in == nil {
+		return in, "", rtt, err
+	}
+
+	serverCookie := ""
+	if respOpt := in.IsEdns0(); respOpt != nil {
+		for _, o := range respOpt.Option {
+			if sc, ok := o.(*dns.EDNS0_COOKIE); ok {
+				if len(sc.Cookie) > 16 {
+					serverCookie = sc.Cookie[16:]
+				} else {
+					serverCookie = sc.Cookie
+				}
+				break
+			}
+		}
+	}
+
+	return in, serverCookie, rtt, nil
 }
 
 func (p *DefaultDNSProber) QueryTCP(server string, qname string, qtype uint16) (*dns.Msg, time.Duration, error) {

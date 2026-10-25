@@ -150,6 +150,30 @@
           <h3>IaC Drift &amp; Export</h3>
           <p>Audits out-of-band record drift directly against local <code>terraform.tfstate</code> files, and exports discovered zone configurations to standard RFC 1035 BIND or Route53 HCL.</p>
         </div>
+        <div class="card">
+          <h3>MTA-STS &amp; TLSRPT (RFC 8461/8460)</h3>
+          <p>Audits inbound SMTP transport security policies, verifies enforce modes, and monitors daily JSON delivery failure telemetry reporting endpoints.</p>
+        </div>
+        <div class="card">
+          <h3>HTTPS / SVCB Records (RFC 9460)</h3>
+          <p>Audits Type 65 HTTPS records enabling direct zero-RTT HTTP/3 (QUIC) connections and Encrypted Client Hello (ECH) to prevent plaintext SNI snooping.</p>
+        </div>
+        <div class="card">
+          <h3>DANE TLSA (RFC 6698 / 7671)</h3>
+          <p>Cryptographically binds service TLS certificates directly to the DNSSEC root-of-trust, eliminating exposure to compromised Certificate Authorities.</p>
+        </div>
+        <div class="card">
+          <h3>DNS Flag Day &amp; Cookies</h3>
+          <p>Validates 1232-byte UDP buffer compliance to eliminate IP packet fragmentation attacks, and probes EDNS0 Server Cookies (RFC 7873) against DDoS amplification.</p>
+        </div>
+        <div class="card">
+          <h3>Defensive Domain Killswitch</h3>
+          <p>Evaluates parked or non-sending domains against RFC 7505 Null MX (<code>0 .</code>), hard-fail SPF, and strict reject DMARC to close spoofing vectors.</p>
+        </div>
+        <div class="card">
+          <h3>CDN Origin Leak Detection</h3>
+          <p>Probes reverse proxy perimeters (Cloudflare, Fastly, CloudFront) against MX hosts, subdomains, and SPF records to detect direct-to-origin IP leaks bypassing WAFs.</p>
+        </div>
       </div>
     </section>
 
