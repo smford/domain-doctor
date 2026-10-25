@@ -280,10 +280,10 @@ domain-doctor lint example.com -C .custom-policy.yaml
 
 ## 🛡️ Continuous GitHub Actions SARIF Scanning
 
-Deploy automated perimeter monitoring on a daily cron schedule. Findings are injected directly into GitHub's **Security → Code Scanning Alerts** tab via SARIF v2.1.0:
+Run Domain Doctor directly as an **official GitHub Action** on a daily cron schedule or in pull requests. Findings are injected directly into GitHub's **Security → Code Scanning Alerts** tab via SARIF v2.1.0 and formatted in the Actions Step Summary:
 
 ```yaml
-name: Domain Perimeter Security Audit (SARIF)
+name: Domain Perimeter Security Audit
 
 on:
   schedule:
@@ -299,20 +299,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install domain-doctor
-        run: |
-          VERSION="0.2.0"
-          curl -sSL "https://github.com/smford/domain-doctor/releases/download/v${VERSION}/domain-doctor_${VERSION}_linux_amd64.tar.gz" | sudo tar -xz -C /usr/local/bin domain-doctor
 
-      - name: Run Domain Lint
-        run: |
-          domain-doctor lint stephenford.org --format sarif --output domain-doctor.sarif || true
-
-      - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Audit Domain Health & Security
+        uses: smford/domain-doctor@v1
         with:
-          sarif_file: domain-doctor.sarif
-          category: domain-doctor
+          domain: 'example.com'
+          sarif: 'true'
+          step-summary: 'true'
+          fail-on-crit: 'false'
 ```
 
 ---

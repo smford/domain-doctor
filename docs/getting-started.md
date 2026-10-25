@@ -92,6 +92,19 @@ Ensure `$GOPATH/bin` or `$HOME/go/bin` is in your `$PATH`.
 
 ---
 
+### 5. Official GitHub Action
+
+Run Domain Doctor directly in CI/CD without installing binaries or compilers:
+
+```yaml
+- name: Audit Domain Health
+  uses: smford/domain-doctor@v1
+  with:
+    domain: 'example.com'
+```
+
+---
+
 ## 🔒 Cryptographic Signature Verification (Cosign)
 
 All official release artifacts and container images are cryptographically signed using **Sigstore Cosign v4 Keyless Signatures** bound to GitHub Actions OIDC identity.

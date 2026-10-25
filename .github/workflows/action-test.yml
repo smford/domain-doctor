@@ -1,0 +1,51 @@
+name: "Test Domain Doctor GitHub Action"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'action.yml'
+      - '.github/workflows/action-test.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'action.yml'
+      - '.github/workflows/action-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  test-action:
+    name: "Run Action on example.com"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Domain Doctor Action
+        id: doctor
+        uses: ./
+        with:
+          domain: 'example.com'
+          version: 'v0.2.0'
+          sarif: 'true'
+          step-summary: 'true'
+          upload-sarif: 'false' # Disabled in test to avoid consuming codeql quota on dummy domain
+          fail-on-crit: 'false'
+
+      - name: Verify Action Outputs
+        run: |
+          echo "Health Score: ${{ steps.doctor.outputs.health-score }}"
+          echo "Health Grade: ${{ steps.doctor.outputs.health-grade }}"
+          echo "Critical Count: ${{ steps.doctor.outputs.crit-count }}"
+          echo "Warning Count: ${{ steps.doctor.outputs.warn-count }}"
+          echo "SARIF File: ${{ steps.doctor.outputs.sarif-file }}"
+
+          if [ ! -f "${{ steps.doctor.outputs.sarif-file }}" ]; then
+            echo "Error: SARIF file was not generated!"
+            exit 1
+          fi

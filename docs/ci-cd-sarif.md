@@ -23,9 +23,9 @@ When you run `domain-doctor scan <domain> --sarif`, it generates a fully complia
 
 ## ⏰ Automated Daily Cron Workflow
 
-Add this GitHub Actions workflow to run a daily health audit against your production domains and inject findings into your repository's **Security > Code scanning alerts** tab.
+### Option 1: Official GitHub Action (Recommended)
 
-Create `.github/workflows/domain-audit-cron.yml`:
+Add this workflow to your repository to audit your domain daily using the official Domain Doctor GitHub Action (`smford/domain-doctor@v1`). It automatically resolves the static binary, generates the SARIF report, populates the Actions Step Summary, and injects findings into **Security > Code scanning alerts**:
 
 ```yaml
 name: "Continuous Domain Health & Security Audit"
@@ -58,20 +58,50 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Audit Domain Health & Security
+        uses: smford/domain-doctor@v1
+        with:
+          domain: ${{ github.event.inputs.target_domain || 'example.com' }}
+          sarif: 'true'
+          step-summary: 'true'
+          upload-sarif: 'true'
+          fail-on-crit: 'false'
+```
+
+---
+
+### Option 2: Manual Binary Installation
+
+If you prefer to manually manage the binary download or run custom shell scripts:
+
+```yaml
+name: "Continuous Domain Health & Security Audit (Manual Binary)"
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Install Domain Doctor
         run: |
           VERSION="v0.2.0"
-          curl -sSL "https://github.com/smford/domain-doctor/releases/download/${VERSION}/domain-doctor_Linux_x86_64.tar.gz" -o domain-doctor.tar.gz
+          curl -sSL "https://github.com/smford/domain-doctor/releases/download/${VERSION}/domain-doctor_${VERSION#v}_linux_amd64.tar.gz" -o domain-doctor.tar.gz
           tar -xzf domain-doctor.tar.gz domain-doctor
           sudo mv domain-doctor /usr/local/bin/
 
-      - name: Execute Authoritative Scan & Generate SARIF
+      - name: Execute Scan & Generate SARIF
         run: |
-          TARGET="${{ github.event.inputs.target_domain || 'example.com' }}"
-          echo "Auditing domain: $TARGET"
-
-          # Run scan with SARIF output; continue-on-error so SARIF is uploaded even if CRIT is found
-          domain-doctor scan "$TARGET" --sarif > results.sarif || true
+          domain-doctor scan example.com --format=sarif > results.sarif || true
 
       - name: Upload Scan Results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3

@@ -206,3 +206,58 @@ func formatBadge(s engine.Severity) string {
 		return "[    ]"
 	}
 }
+
+// FormatMarkdownReport generates a GitHub Flavored Markdown summary report for Step Summaries and CI/CD logs.
+func FormatMarkdownReport(report *engine.DiagnosticReport) string {
+	score, grade := ComputeHealthScore(report)
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("### 🛡️ Domain Doctor Diagnostic Report: `%s`\n\n", report.Domain))
+	sb.WriteString(fmt.Sprintf("* **Health Score**: **%d / 100** (Grade: `%s`)\n", score, grade))
+	if len(report.Nameservers) > 0 {
+		sb.WriteString(fmt.Sprintf("* **Authoritative Nameservers**: `%s`\n", strings.Join(report.Nameservers, "`, `")))
+	}
+	sb.WriteString(fmt.Sprintf("* **Audit Timestamp**: %s\n\n", report.Timestamp.UTC().Format("2006-01-02 15:04:05 UTC")))
+
+	critCount, warnCount, infoCount, passCount := 0, 0, 0, 0
+	for _, f := range report.Findings {
+		switch f.Severity {
+		case engine.SeverityCritical:
+			critCount++
+		case engine.SeverityWarning:
+			warnCount++
+		case engine.SeverityInfo:
+			infoCount++
+		case engine.SeverityPass:
+			passCount++
+		}
+	}
+
+	sb.WriteString(fmt.Sprintf("| Status | Count |\n| :--- | :---: |\n| ❌ Critical | %d |\n| ⚠️ Warning | %d |\n| ℹ️ Info | %d |\n| ✅ Pass | %d |\n\n", critCount, warnCount, infoCount, passCount))
+
+	sb.WriteString("| Rule ID | Category | Status | Summary | Details |\n")
+	sb.WriteString("| :--- | :--- | :---: | :--- | :--- |\n")
+	for _, f := range report.Findings {
+		ruleRef := f.RuleID
+		if ruleRef == "" {
+			ruleRef = f.ID
+		}
+		var badge string
+		switch f.Severity {
+		case engine.SeverityCritical:
+			badge = "❌ CRIT"
+		case engine.SeverityWarning:
+			badge = "⚠️ WARN"
+		case engine.SeverityInfo:
+			badge = "ℹ️ INFO"
+		case engine.SeverityPass:
+			badge = "✅ PASS"
+		default:
+			badge = string(f.Severity)
+		}
+		cleanSummary := strings.ReplaceAll(f.Summary, "|", "\\|")
+		cleanDetail := strings.ReplaceAll(f.Detail, "|", "\\|")
+		sb.WriteString(fmt.Sprintf("| `%s` | %s | %s | %s | %s |\n", ruleRef, f.Category, badge, cleanSummary, cleanDetail))
+	}
+
+	return sb.String()
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -21,6 +22,9 @@ var (
 	scanJSON     bool
 	scanTUI      bool
 	scanMermaid  bool
+	scanSARIF    bool
+	scanFormat   string
+	scanOutput   string
 	scanCategory string
 	scanSeverity string
 	scanQuiet    bool
@@ -39,6 +43,9 @@ func init() {
 	scanCmd.Flags().BoolVar(&scanJSON, "json", false, "output results in raw JSON format")
 	scanCmd.Flags().BoolVar(&scanTUI, "tui", false, "launch interactive terminal UI")
 	scanCmd.Flags().BoolVar(&scanMermaid, "mermaid", false, "output Mermaid delegation diagram")
+	scanCmd.Flags().BoolVar(&scanSARIF, "sarif", false, "output findings in SARIF v2.1.0 format")
+	scanCmd.Flags().StringVar(&scanFormat, "format", "cli", "output format (cli | json | sarif | markdown | github-markdown)")
+	scanCmd.Flags().StringVarP(&scanOutput, "output", "o", "", "write report output to specified file path")
 	scanCmd.Flags().StringVarP(&scanCategory, "category", "c", "", "filter findings to comma-separated categories (e.g. dns,mail)")
 	scanCmd.Flags().StringVarP(&scanSeverity, "severity", "s", "", "minimum severity threshold to display (info, warn, crit)")
 	scanCmd.Flags().BoolVarP(&scanQuiet, "quiet", "q", false, "quiet mode; suppress banner and show only warnings/criticals")
@@ -78,10 +85,34 @@ func runScan(ctx context.Context, domain string, asJSON, asTUI, asMermaid bool) 
 		return fmt.Errorf("audit execution failed: %w", err)
 	}
 
-	if asJSON {
+	if scanSARIF || strings.ToLower(scanFormat) == "sarif" {
+		sarifJSON, err := cli.GenerateSARIF(report, version)
+		if err != nil {
+			return err
+		}
+		if scanOutput != "" {
+			return os.WriteFile(scanOutput, []byte(sarifJSON), 0644)
+		}
+		fmt.Println(sarifJSON)
+		return nil
+	}
+
+	if strings.ToLower(scanFormat) == "markdown" || strings.ToLower(scanFormat) == "github-markdown" {
+		md := cli.FormatMarkdownReport(report)
+		if scanOutput != "" {
+			return os.WriteFile(scanOutput, []byte(md), 0644)
+		}
+		fmt.Println(md)
+		return nil
+	}
+
+	if asJSON || strings.ToLower(scanFormat) == "json" {
 		data, err := json.MarshalIndent(report, "", "  ")
 		if err != nil {
 			return err
+		}
+		if scanOutput != "" {
+			return os.WriteFile(scanOutput, data, 0644)
 		}
 		fmt.Println(string(data))
 		return nil

@@ -1,0 +1,209 @@
+name: 'Domain Doctor'
+description: 'Authoritative DNS diagnostics, RFC 2308 negative caching, SPF/DMARC mail security, TLS hygiene, and SARIF GitHub Code Scanning.'
+author: 'smford'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  domain:
+    description: 'Target domain to inspect (e.g. example.com)'
+    required: true
+  version:
+    description: 'Version of domain-doctor to install (e.g. v0.2.0, or latest)'
+    required: false
+    default: 'latest'
+  config:
+    description: 'Path to optional .domain-doctor.yaml configuration file'
+    required: false
+    default: ''
+  sarif:
+    description: 'Generate SARIF v2.1.0 report for GitHub Security Code Scanning'
+    required: false
+    default: 'true'
+  sarif-file:
+    description: 'File path where the SARIF report should be saved'
+    required: false
+    default: 'domain-doctor.sarif'
+  upload-sarif:
+    description: 'Automatically upload SARIF report to GitHub Security Code Scanning'
+    required: false
+    default: 'true'
+  step-summary:
+    description: 'Render formatted diagnostic table to GitHub Actions Step Summary'
+    required: false
+    default: 'true'
+  fail-on-crit:
+    description: 'Fail step (exit code 1) if any CRIT violation is detected'
+    required: false
+    default: 'false'
+  category:
+    description: 'Filter findings to comma-separated categories (e.g. dns,mail,security)'
+    required: false
+    default: ''
+  severity:
+    description: 'Minimum severity threshold to display (info, warn, crit)'
+    required: false
+    default: ''
+  timeout:
+    description: 'Network timeout for individual queries (e.g. 10s, 25s)'
+    required: false
+    default: '25s'
+
+outputs:
+  sarif-file:
+    description: 'Path to the generated SARIF report file'
+    value: ${{ steps.scan.outputs.sarif-file }}
+  health-score:
+    description: 'Calculated domain health score (0-100)'
+    value: ${{ steps.scan.outputs.health-score }}
+  health-grade:
+    description: 'Calculated domain health letter grade (A+ through F)'
+    value: ${{ steps.scan.outputs.health-grade }}
+  crit-count:
+    description: 'Number of critical (CRIT) findings detected'
+    value: ${{ steps.scan.outputs.crit-count }}
+  warn-count:
+    description: 'Number of warning (WARN) findings detected'
+    value: ${{ steps.scan.outputs.warn-count }}
+  exit-code:
+    description: 'Execution exit code (0 = clean, 1 = critical findings, 2 = error)'
+    value: ${{ steps.scan.outputs.exit-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve and Install Domain Doctor Binary
+      id: install
+      shell: bash
+      run: |
+        OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+        if [ "$OS" = "macos" ]; then
+          OS="darwin"
+        fi
+
+        ARCH=$(echo "${{ runner.arch }}" | tr '[:upper:]' '[:lower:]')
+        if [ "$ARCH" = "x64" ]; then
+          ARCH="amd64"
+        fi
+
+        TAG="${{ inputs.version }}"
+        if [ -z "$TAG" ] || [ "$TAG" = "latest" ]; then
+          RESOLVED_TAG=$(curl -sSL -H "Authorization: Bearer ${{ github.token }}" https://api.github.com/repos/smford/domain-doctor/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || true)
+          if [ -n "$RESOLVED_TAG" ] && [ "$RESOLVED_TAG" != "null" ]; then
+            TAG="$RESOLVED_TAG"
+          else
+            TAG="v0.2.0"
+          fi
+        fi
+
+        if [[ ! "$TAG" =~ ^v ]]; then
+          TAG="v${TAG}"
+        fi
+
+        VERSION="${TAG#v}"
+        TAR_NAME="domain-doctor_${VERSION}_${OS}_${ARCH}.tar.gz"
+        DOWNLOAD_URL="https://github.com/smford/domain-doctor/releases/download/${TAG}/${TAR_NAME}"
+
+        BIN_DIR="${RUNNER_TEMP:-/tmp}/domain-doctor-bin"
+        mkdir -p "$BIN_DIR"
+
+        echo "Installing Domain Doctor ${TAG} (${OS}/${ARCH})..."
+        if ! curl -sSL --fail "$DOWNLOAD_URL" -o "$BIN_DIR/archive.tar.gz" 2>/dev/null; then
+          echo "Release archive not found at $DOWNLOAD_URL; compiling from source..."
+          GOBIN="$BIN_DIR" go install github.com/smford/domain-doctor/cmd/domain-doctor@${TAG}
+        else
+          tar -xzf "$BIN_DIR/archive.tar.gz" -C "$BIN_DIR" domain-doctor
+          chmod +x "$BIN_DIR/domain-doctor"
+        fi
+
+        echo "$BIN_DIR" >> "$GITHUB_PATH"
+        echo "Domain Doctor successfully installed to $BIN_DIR"
+
+    - name: Run Domain Doctor Scan
+      id: scan
+      shell: bash
+      run: |
+        DOMAIN="${{ inputs.domain }}"
+        CONFIG="${{ inputs.config }}"
+        SARIF_FILE="${{ inputs.sarif-file }}"
+        TIMEOUT="${{ inputs.timeout }}"
+        CATEGORY="${{ inputs.category }}"
+        SEVERITY="${{ inputs.severity }}"
+
+        EXTRA_FLAGS=""
+        if [ -n "$CONFIG" ] && [ -f "$CONFIG" ]; then
+          EXTRA_FLAGS="$EXTRA_FLAGS --config=$CONFIG"
+        fi
+        if [ -n "$TIMEOUT" ]; then
+          EXTRA_FLAGS="$EXTRA_FLAGS --timeout=$TIMEOUT"
+        fi
+        if [ -n "$CATEGORY" ]; then
+          EXTRA_FLAGS="$EXTRA_FLAGS --category=$CATEGORY"
+        fi
+        if [ -n "$SEVERITY" ]; then
+          EXTRA_FLAGS="$EXTRA_FLAGS --severity=$SEVERITY"
+        fi
+
+        JSON_TMP="${RUNNER_TEMP:-/tmp}/dd-scan-${DOMAIN}.json"
+        domain-doctor scan "$DOMAIN" --format=json $EXTRA_FLAGS > "$JSON_TMP" || true
+
+        python3 -c "
+        import sys, json
+
+        try:
+            with open(sys.argv[1], 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except Exception:
+            data = {'findings': []}
+
+        findings = data.get('findings', [])
+        crit_count = sum(1 for f in findings if f.get('severity') == 'CRIT')
+        warn_count = sum(1 for f in findings if f.get('severity') == 'WARN')
+
+        score = max(0, 100 - (crit_count * 25) - (warn_count * 10))
+        grade = 'F'
+        if score >= 95: grade = 'A+'
+        elif score >= 90: grade = 'A'
+        elif score >= 85: grade = 'B+'
+        elif score >= 80: grade = 'B'
+        elif score >= 70: grade = 'C'
+        elif score >= 60: grade = 'D'
+
+        with open(sys.argv[2], 'a', encoding='utf-8') as out:
+            out.write(f'health-score={score}\n')
+            out.write(f'health-grade={grade}\n')
+            out.write(f'crit-count={crit_count}\n')
+            out.write(f'warn-count={warn_count}\n')
+        " "$JSON_TMP" "$GITHUB_OUTPUT"
+
+        if [ "${{ inputs.sarif }}" = "true" ]; then
+          mkdir -p "$(dirname "$SARIF_FILE")"
+          domain-doctor scan "$DOMAIN" --format=sarif $EXTRA_FLAGS > "$SARIF_FILE"
+          echo "sarif-file=$SARIF_FILE" >> "$GITHUB_OUTPUT"
+        else
+          echo "sarif-file=" >> "$GITHUB_OUTPUT"
+        fi
+
+        if [ "${{ inputs.step-summary }}" = "true" ] && [ -n "$GITHUB_STEP_SUMMARY" ]; then
+          domain-doctor scan "$DOMAIN" --format=markdown $EXTRA_FLAGS >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        CRIT_COUNT=$(grep '^crit-count=' "$GITHUB_OUTPUT" | cut -d= -f2 || echo "0")
+        if [ "$CRIT_COUNT" -gt 0 ]; then
+          echo "exit-code=1" >> "$GITHUB_OUTPUT"
+          if [ "${{ inputs.fail-on-crit }}" = "true" ]; then
+            echo "::error::Domain Doctor detected $CRIT_COUNT critical finding(s) on $DOMAIN"
+            exit 1
+          fi
+        else
+          echo "exit-code=0" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Upload SARIF to GitHub Code Scanning
+      if: ${{ inputs.sarif == 'true' && inputs.upload-sarif == 'true' && steps.scan.outputs.sarif-file != '' }}
+      uses: github/codeql-action/upload-sarif@v3
+      continue-on-error: true
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif-file }}
+        category: domain-doctor
