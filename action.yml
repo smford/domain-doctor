@@ -10,7 +10,7 @@ inputs:
     description: 'Target domain to inspect (e.g. example.com)'
     required: true
   version:
-    description: 'Version of domain-doctor to install (e.g. v0.2.0, or latest)'
+    description: 'Version of domain-doctor to install (e.g. v0.2.0, latest, or local)'
     required: false
     default: 'latest'
   config:
@@ -87,34 +87,40 @@ runs:
           ARCH="amd64"
         fi
 
-        TAG="${{ inputs.version }}"
-        if [ -z "$TAG" ] || [ "$TAG" = "latest" ]; then
-          RESOLVED_TAG=$(curl -sSL -H "Authorization: Bearer ${{ github.token }}" https://api.github.com/repos/smford/domain-doctor/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || true)
-          if [ -n "$RESOLVED_TAG" ] && [ "$RESOLVED_TAG" != "null" ]; then
-            TAG="$RESOLVED_TAG"
-          else
-            TAG="v0.2.0"
-          fi
-        fi
-
-        if [[ ! "$TAG" =~ ^v ]]; then
-          TAG="v${TAG}"
-        fi
-
-        VERSION="${TAG#v}"
-        TAR_NAME="domain-doctor_${VERSION}_${OS}_${ARCH}.tar.gz"
-        DOWNLOAD_URL="https://github.com/smford/domain-doctor/releases/download/${TAG}/${TAR_NAME}"
-
         BIN_DIR="${RUNNER_TEMP:-/tmp}/domain-doctor-bin"
         mkdir -p "$BIN_DIR"
 
-        echo "Installing Domain Doctor ${TAG} (${OS}/${ARCH})..."
-        if ! curl -sSL --fail "$DOWNLOAD_URL" -o "$BIN_DIR/archive.tar.gz" 2>/dev/null; then
-          echo "Release archive not found at $DOWNLOAD_URL; compiling from source..."
-          GOBIN="$BIN_DIR" go install github.com/smford/domain-doctor/cmd/domain-doctor@${TAG}
-        else
-          tar -xzf "$BIN_DIR/archive.tar.gz" -C "$BIN_DIR" domain-doctor
+        TAG="${{ inputs.version }}"
+        if [ "$TAG" = "local" ]; then
+          echo "Building Domain Doctor binary from local repository..."
+          go build -o "$BIN_DIR/domain-doctor" ./cmd/domain-doctor
           chmod +x "$BIN_DIR/domain-doctor"
+        else
+          if [ -z "$TAG" ] || [ "$TAG" = "latest" ]; then
+            RESOLVED_TAG=$(curl -sSL -H "Authorization: Bearer ${{ github.token }}" https://api.github.com/repos/smford/domain-doctor/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || true)
+            if [ -n "$RESOLVED_TAG" ] && [ "$RESOLVED_TAG" != "null" ]; then
+              TAG="$RESOLVED_TAG"
+            else
+              TAG="v0.2.0"
+            fi
+          fi
+
+          if [[ ! "$TAG" =~ ^v ]]; then
+            TAG="v${TAG}"
+          fi
+
+          VERSION="${TAG#v}"
+          TAR_NAME="domain-doctor_${VERSION}_${OS}_${ARCH}.tar.gz"
+          DOWNLOAD_URL="https://github.com/smford/domain-doctor/releases/download/${TAG}/${TAR_NAME}"
+
+          echo "Installing Domain Doctor ${TAG} (${OS}/${ARCH})..."
+          if ! curl -sSL --fail "$DOWNLOAD_URL" -o "$BIN_DIR/archive.tar.gz" 2>/dev/null; then
+            echo "Release archive not found at $DOWNLOAD_URL; compiling from source..."
+            GOBIN="$BIN_DIR" go install github.com/smford/domain-doctor/cmd/domain-doctor@${TAG}
+          else
+            tar -xzf "$BIN_DIR/archive.tar.gz" -C "$BIN_DIR" domain-doctor
+            chmod +x "$BIN_DIR/domain-doctor"
+          fi
         fi
 
         echo "$BIN_DIR" >> "$GITHUB_PATH"
@@ -145,8 +151,11 @@ runs:
           EXTRA_FLAGS="$EXTRA_FLAGS --severity=$SEVERITY"
         fi
 
+        # 1. Collect JSON metrics
         JSON_TMP="${RUNNER_TEMP:-/tmp}/dd-scan-${DOMAIN}.json"
-        domain-doctor scan "$DOMAIN" --format=json $EXTRA_FLAGS > "$JSON_TMP" || true
+        if ! domain-doctor scan "$DOMAIN" --json $EXTRA_FLAGS > "$JSON_TMP" 2>/dev/null; then
+          domain-doctor scan "$DOMAIN" --format=json $EXTRA_FLAGS > "$JSON_TMP" 2>/dev/null || true
+        fi
 
         python3 -c "
         import sys, json
@@ -177,16 +186,24 @@ runs:
             out.write(f'warn-count={warn_count}\n')
         " "$JSON_TMP" "$GITHUB_OUTPUT"
 
+        # 2. Generate SARIF report if requested
         if [ "${{ inputs.sarif }}" = "true" ]; then
           mkdir -p "$(dirname "$SARIF_FILE")"
-          domain-doctor scan "$DOMAIN" --format=sarif $EXTRA_FLAGS > "$SARIF_FILE"
+          if ! domain-doctor scan "$DOMAIN" --sarif --output "$SARIF_FILE" $EXTRA_FLAGS 2>/dev/null; then
+            if ! domain-doctor lint "$DOMAIN" --format sarif --output "$SARIF_FILE" $EXTRA_FLAGS 2>/dev/null; then
+              domain-doctor scan "$DOMAIN" --format=sarif $EXTRA_FLAGS > "$SARIF_FILE" 2>/dev/null || true
+            fi
+          fi
           echo "sarif-file=$SARIF_FILE" >> "$GITHUB_OUTPUT"
         else
           echo "sarif-file=" >> "$GITHUB_OUTPUT"
         fi
 
+        # 3. Render Step Summary if requested
         if [ "${{ inputs.step-summary }}" = "true" ] && [ -n "$GITHUB_STEP_SUMMARY" ]; then
-          domain-doctor scan "$DOMAIN" --format=markdown $EXTRA_FLAGS >> "$GITHUB_STEP_SUMMARY"
+          if ! domain-doctor scan "$DOMAIN" --format=markdown $EXTRA_FLAGS >> "$GITHUB_STEP_SUMMARY" 2>/dev/null; then
+            domain-doctor lint "$DOMAIN" --format github-markdown $EXTRA_FLAGS >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+          fi
         fi
 
         CRIT_COUNT=$(grep '^crit-count=' "$GITHUB_OUTPUT" | cut -d= -f2 || echo "0")

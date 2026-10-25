@@ -26,15 +26,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run Domain Doctor Action
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Run Domain Doctor Action (Local Build)
         id: doctor
         uses: ./
         with:
           domain: 'example.com'
-          version: 'v0.2.0'
+          version: 'local'
           sarif: 'true'
           step-summary: 'true'
-          upload-sarif: 'false' # Disabled in test to avoid consuming codeql quota on dummy domain
+          upload-sarif: 'false'
           fail-on-crit: 'false'
 
       - name: Verify Action Outputs
