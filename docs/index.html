@@ -1,30 +1,245 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="color-scheme: light;">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>domain-doctor - Domain Health &amp; DNS Diagnostic Tool</title>
+  <title>domain-doctor — Comprehensive Domain Diagnostic &amp; Security Auditor</title>
+  <meta name="description" content="Production-grade domain health inspection, RFC 2308 negative cache detection, DNS delegation audit, mail delivery security, and BGP resilience utility.">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩺</text></svg>">
+
+  <!-- Mermaid.js for Interactive Diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    });
+  </script>
+
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #24292e; }
-    h1 { border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
-    pre { background: #f6f8fa; border-radius: 6px; padding: 16px; overflow: auto; }
-    code { font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace; }
-    .badge { display: inline-block; padding: 4px 8px; font-size: 12px; font-weight: 600; line-height: 1; background-color: #0366d6; color: #fff; border-radius: 20px; }
+    :root {
+      color-scheme: light;
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-alt: #f1f5f9;
+      --border-subtle: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #334155;
+      --text-dim: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --primary-border: #bfdbfe;
+      --success-bg: #ecfdf5;
+      --success-text: #065f46;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); background: var(--bg-page); color: var(--text-main); line-height: 1.6; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(8px);
+    }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+    .nav-links { display: flex; gap: 24px; font-size: 0.95rem; font-weight: 500; }
+    .nav-links a { color: var(--text-muted); }
+
+    .hero { padding: 64px 0 48px; text-align: center; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 9999px;
+      background: var(--primary-light); color: var(--primary);
+      border: 1px solid var(--primary-border); font-size: 0.85rem; font-weight: 600; margin-bottom: 16px;
+    }
+    .hero h1 { font-size: 2.75rem; font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
+    .hero p { font-size: 1.2rem; color: var(--text-muted); max-width: 760px; margin: 0 auto 32px; }
+
+    .install-box {
+      max-width: 640px; margin: 0 auto 48px; background: #0f172a; color: #f8fafc;
+      border-radius: 12px; padding: 20px 24px; text-align: left; font-family: var(--font-mono);
+      font-size: 0.95rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+    .install-box code { display: block; margin-top: 8px; color: #38bdf8; }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 48px; }
+    .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 24px; }
+    .card h3 { font-size: 1.15rem; margin-bottom: 8px; color: var(--text-main); }
+    .card p { font-size: 0.925rem; color: var(--text-muted); line-height: 1.5; }
+
+    .section-title { text-align: center; font-size: 2rem; font-weight: 700; margin: 48px 0 24px; }
+
+    pre.code-block {
+      background: #0f172a; color: #f8fafc; padding: 20px; border-radius: 8px;
+      font-family: var(--font-mono); font-size: 0.9rem; overflow-x: auto; margin: 16px 0;
+    }
+
+    .diagram-wrapper { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center; }
+
+    table { width: 100%; border-collapse: collapse; margin: 24px 0; background: var(--bg-surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-subtle); }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-subtle); font-size: 0.925rem; }
+    th { background: var(--bg-surface-alt); font-weight: 600; }
+
+    footer { border-top: 1px solid var(--border-subtle); padding: 32px 0; text-align: center; color: var(--text-dim); font-size: 0.9rem; margin-top: 64px; }
   </style>
 </head>
 <body>
-  <h1>domain-doctor <span id="release-version" class="badge">v0.1.0</span></h1>
-  <p>Comprehensive domain health, DNS diagnostic, and TLS autopsy CLI tool.</p>
+  <header>
+    <div class="container nav-inner">
+      <a href="#" class="logo"><span>🩺</span> domain-doctor</a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#diagrams">Diagrams</a>
+        <a href="#examples">Examples</a>
+        <a href="#reference">CLI Reference</a>
+        <a href="https://github.com/smford/domain-doctor">GitHub</a>
+      </div>
+    </div>
+  </header>
 
-  <h2>Installation</h2>
-  <pre><code>brew tap smford/tap
-brew install domain-doctor</code></pre>
+  <main class="container">
+    <section class="hero">
+      <div class="badge">
+        <span>Release:</span>
+        <span id="release-version">v0.1.0</span>
+      </div>
+      <h1>Full-Spectrum Domain Diagnostic &amp; Security Auditor</h1>
+      <p>Evaluate authoritative DNS delegation health, RFC 2308 negative cache staleness, email deliverability posture, and infrastructure drift in seconds.</p>
 
-  <h2>Download</h2>
-  <p>Latest release: <a href="https://github.com/smford/domain-doctor/releases/tag/v0.1.0"><span id="release-version-number">0.1.0</span></a></p>
-  <p><a href="https://github.com/smford/domain-doctor/releases/download/v0.1.0/domain-doctor_0.1.0_darwin_arm64.tar.gz">Download macOS arm64</a></p>
+      <div class="install-box">
+        <span># Quick Install via Homebrew:</span>
+        <code>brew tap smford/tap &amp;&amp; brew install domain-doctor</code>
+      </div>
+    </section>
 
-  <h2>Docker</h2>
-  <pre><code>docker pull ghcr.io/smford/domain-doctor:v0.1.0</code></pre>
+    <section id="features">
+      <h2 class="section-title">Core Capabilities</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>RFC 2308 Negative Caching</h3>
+          <p>Detect when public Anycast resolvers (1.1.1.1, 8.8.8.8, 9.9.9.9) serve stale NXDOMAIN or NODATA caches while authoritative servers serve live records. Computes exact eviction countdowns.</p>
+        </div>
+        <div class="card">
+          <h3>Mail Authentication Audit</h3>
+          <p>Recursively counts SPF DNS lookups against the 10-mechanism RFC 7208 PermError ceiling. Validates DMARC p=reject alignment, scans common DKIM selectors, and probes port 25 STARTTLS.</p>
+        </div>
+        <div class="card">
+          <h3>Subdomain Takeover Defense</h3>
+          <p>Checks dangling CNAME records against known cloud signature patterns (AWS S3, CloudFront, GitHub Pages, Heroku, Azure) returning unclaimed NXDOMAIN statuses.</p>
+        </div>
+        <div class="card">
+          <h3>BGP &amp; Resilience Mapping</h3>
+          <p>Resolves authoritative nameserver IPs to origin BGP Autonomous Systems via Team Cymru DNS without rate-limited external APIs, exposing single points of failure.</p>
+        </div>
+        <div class="card">
+          <h3>Live Cutover Watch Mode</h3>
+          <p>Interactive Bubble Tea TUI dashboard providing real-time tracking of SOA serial bumps, record transitions, and negative cache evictions during live domain migrations.</p>
+        </div>
+        <div class="card">
+          <h3>IaC Drift &amp; Export</h3>
+          <p>Audits out-of-band record drift directly against local <code>terraform.tfstate</code> files, and exports discovered zone configurations to standard RFC 1035 BIND or Route53 HCL.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="diagrams">
+      <h2 class="section-title">Mermaid Diagram Generation</h2>
+      <p style="text-align: center; color: var(--text-muted);">Generate architecture diagrams directly from live domain queries:</p>
+
+      <div class="diagram-wrapper">
+        <pre class="mermaid">
+flowchart TD
+    classDef ok fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff;
+    classDef node fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff;
+
+    root["Root Hints (ICANN Root)"]:::node
+    tld[".org Registry Nameservers"]:::node
+    root -->|Delegation| tld
+
+    ns0["ns-1283.awsdns-32.org"]:::ok
+    tld -->|NS Delegation| ns0
+    ns0 -->|Authoritative Answer AA| apex["domain-doctor.org"]:::node
+    ns1["ns-1707.awsdns-21.co.uk"]:::ok
+    tld -->|NS Delegation| ns1
+    ns1 -->|Authoritative Answer AA| apex["domain-doctor.org"]:::node
+        </pre>
+      </div>
+    </section>
+
+    <section id="reference">
+      <h2 class="section-title">CLI Command Reference</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>domain-doctor scan &lt;domain&gt;</code></td>
+            <td>Full diagnostic domain scan with color-coded severity badges (<code>--json</code>, <code>--tui</code>, <code>--mermaid</code>)</td>
+          </tr>
+          <tr>
+            <td><code>domain-doctor watch &lt;domain&gt;</code></td>
+            <td>Continuous polling TUI dashboard for tracking live DNS cutovers (<code>--interval=3s</code>)</td>
+          </tr>
+          <tr>
+            <td><code>domain-doctor snapshot &lt;domain&gt;</code></td>
+            <td>Save current zone records and diagnostic findings to structured JSON</td>
+          </tr>
+          <tr>
+            <td><code>domain-doctor diff &lt;file.json&gt; &lt;domain&gt;</code></td>
+            <td>Compare a captured snapshot against live DNS to verify migration integrity</td>
+          </tr>
+          <tr>
+            <td><code>domain-doctor lint &lt;domain&gt;</code></td>
+            <td>Headless CI/CD audit with exit codes (0 clean, 1 critical, 2 warning) and SARIF export</td>
+          </tr>
+          <tr>
+            <td><code>domain-doctor diagram &lt;domain&gt;</code></td>
+            <td>Output clean Mermaid definitions (<code>--type=delegation|spf|mail</code>)</td>
+          </tr>
+          <tr>
+            <td><code>domain-doctor export &lt;domain&gt;</code></td>
+            <td>Reverse-engineer active DNS records into RFC 1035 BIND or Terraform Route53 HCL</td>
+          </tr>
+          <tr>
+            <td><code>domain-doctor audit-drift &lt;domain&gt;</code></td>
+            <td>Compare declared Route53/Cloudflare resources in <code>terraform.tfstate</code> against live DNS</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="downloads">
+      <h2 class="section-title">Download Release Assets</h2>
+      <p style="text-align: center; margin-bottom: 24px;">Latest release: <a href="https://github.com/smford/domain-doctor/releases/tag/v0.1.0"><span id="release-version-number">0.1.0</span></a></p>
+      <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+        <a href="https://github.com/smford/domain-doctor/releases/download/v0.1.0/domain-doctor_0.1.0_darwin_arm64.tar.gz" class="badge" style="padding: 10px 18px; font-size: 0.95rem;">macOS Apple Silicon (arm64)</a>
+        <a href="https://github.com/smford/domain-doctor/releases/download/v0.1.0/domain-doctor_0.1.0_darwin_amd64.tar.gz" class="badge" style="padding: 10px 18px; font-size: 0.95rem;">macOS Intel (amd64)</a>
+        <a href="https://github.com/smford/domain-doctor/releases/download/v0.1.0/domain-doctor_0.1.0_linux_arm64.tar.gz" class="badge" style="padding: 10px 18px; font-size: 0.95rem;">Linux (arm64)</a>
+        <a href="https://github.com/smford/domain-doctor/releases/download/v0.1.0/domain-doctor_0.1.0_linux_amd64.tar.gz" class="badge" style="padding: 10px 18px; font-size: 0.95rem;">Linux (amd64)</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>domain-doctor is open source software licensed under the <a href="https://github.com/smford/domain-doctor/blob/main/LICENSE">MIT License</a>.</p>
+      <p>Copyright &copy; 2026 Simon Ford.</p>
+    </div>
+  </footer>
 </body>
 </html>
