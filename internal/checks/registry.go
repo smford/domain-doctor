@@ -32,4 +32,6 @@ func RegisterAll(e *engine.Engine) {
 	e.Register(&DNSCookiesCheck{})
 	e.Register(&WildcardCheck{})
 	e.Register(&CDNOriginCheck{})
+	e.Register(&PSLBoundaryCheck{})
+	e.Register(&PSLCookieIsolationCheck{})
 }

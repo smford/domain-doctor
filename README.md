@@ -203,9 +203,9 @@ domain-doctor export mydomain.com --format=hcl
 
 ---
 
-## 🔍 Comprehensive Diagnostic Check Matrix (27 Audits)
+## 🔍 Comprehensive Diagnostic Check Matrix (29 Audits)
 
-`domain-doctor` runs an authoritative-first test battery spanning 27 specialized audit engines across 6 core operational categories:
+`domain-doctor` runs an authoritative-first test battery spanning 29 specialized audit engines across 6 core operational categories:
 
 | Category | Diagnostic Check | RFC / Security Standard | Purpose & Threat Mitigation |
 | :--- | :--- | :--- | :--- |
@@ -230,10 +230,13 @@ domain-doctor export mydomain.com --format=hcl
 | **Security** | **Subdomain Takeover** | Common Cloud Signatures | Scans dangling CNAMEs against known cloud provider patterns (S3, GitHub Pages, Heroku, Azure). |
 | **Security** | **Defensive Domain Killswitch**| RFC 7505 | Audits non-sending/parked domains for Null MX (`0 .`), hard-fail SPF (`-all`), and reject DMARC. |
 | **Security** | **CDN Direct Origin Bypass** | Cloud Perimeter Defense | Compares CDN-proxied apex IPs against MX/origin host IPs to prevent WAF/DDoS bypass. |
+| **Security** | **PSL Cookie Isolation** | RFC 6265bis / PSL | Detects wildcard DNS / multi-tenant exposure to cross-subdomain cookie tossing and session fixation. |
 | **Resilience**| **BGP ASN Diversity** | Team Cymru IP-to-ASN | Maps nameservers to BGP Autonomous Systems via DNS, exposing single-AS transit failures. |
 | **Resilience**| **ECS Geo-Steering** | RFC 7871 | Simulates EDNS Client Subnet queries across worldwide subnets to audit Anycast routing. |
 | **Resilience**| **DNS Flag Day Compliance** | DNS Flag Day 2020 | Tests EDNS0 buffer sizes (max 1232 bytes) to eliminate UDP packet fragmentation attacks. |
 | **Resilience**| **DNS Cookies** | RFC 7873 / 8749 | Probes nameservers for EDNS0 Server Cookies to mitigate amplification and spoofing attacks. |
+| **Registration**| **Public Suffix & eTLD+1**| publicsuffix.org | Classifies organizational domain boundaries, warns on direct suffix scans, and tracks private platform hosting. |
+| **Registration**| **RDAP Expiry & Lock** | RFC 9082 / 9083 | Audits domain registrar lifecycle, expiration runways, and transfer lock defense. |
 | **Threat** | **Certificate Transparency** | RFC 6962 | Queries real-time CT log telemetry via crt.sh to discover unmanaged or shadow subdomains. |
 | **Threat** | **Homoglyph & Punycode** | Unicode TR39 | Evaluates IDNA confusable characters and punycode representations against phishing lookalikes. |
 

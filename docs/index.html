@@ -174,6 +174,14 @@
           <h3>CDN Origin Leak Detection</h3>
           <p>Probes reverse proxy perimeters (Cloudflare, Fastly, CloudFront) against MX hosts, subdomains, and SPF records to detect direct-to-origin IP leaks bypassing WAFs.</p>
         </div>
+        <div class="card">
+          <h3>Public Suffix &amp; eTLD+1</h3>
+          <p>Classifies organizational apex boundaries via publicsuffix.org, flags direct registry/platform suffix scans, and tracks private platform tenant hosting.</p>
+        </div>
+        <div class="card">
+          <h3>PSL Cookie Isolation</h3>
+          <p>Audits wildcard DNS and multi-tenant subdomains against cross-tenant cookie tossing, session fixation, and Let's Encrypt 50 certs/week rate limits.</p>
+        </div>
       </div>
     </section>
 
