@@ -203,9 +203,9 @@ domain-doctor export mydomain.com --format=hcl
 
 ---
 
-## 🔍 Comprehensive Diagnostic Check Matrix (29 Audits)
+## 🔍 Comprehensive Diagnostic Check Matrix (30 Audits)
 
-`domain-doctor` runs an authoritative-first test battery spanning 29 specialized audit engines across 6 core operational categories:
+`domain-doctor` runs an authoritative-first test battery spanning 30 specialized audit engines across 6 core operational categories:
 
 | Category | Diagnostic Check | RFC / Security Standard | Purpose & Threat Mitigation |
 | :--- | :--- | :--- | :--- |
@@ -231,6 +231,7 @@ domain-doctor export mydomain.com --format=hcl
 | **Security** | **Defensive Domain Killswitch**| RFC 7505 | Audits non-sending/parked domains for Null MX (`0 .`), hard-fail SPF (`-all`), and reject DMARC. |
 | **Security** | **CDN Direct Origin Bypass** | Cloud Perimeter Defense | Compares CDN-proxied apex IPs against MX/origin host IPs to prevent WAF/DDoS bypass. |
 | **Security** | **PSL Cookie Isolation** | RFC 6265bis / PSL | Detects wildcard DNS / multi-tenant exposure to cross-subdomain cookie tossing and session fixation. |
+| **Security** | **HTTP Cookie Scope & Hygiene** | RFC 6265bis | Audits Set-Cookie headers for Supercookie PSL violations, over-scoped Domain attributes, __Host-/__Secure- prefixes, and SameSite enforcement. |
 | **Resilience**| **BGP ASN Diversity** | Team Cymru IP-to-ASN | Maps nameservers to BGP Autonomous Systems via DNS, exposing single-AS transit failures. |
 | **Resilience**| **ECS Geo-Steering** | RFC 7871 | Simulates EDNS Client Subnet queries across worldwide subnets to audit Anycast routing. |
 | **Resilience**| **DNS Flag Day Compliance** | DNS Flag Day 2020 | Tests EDNS0 buffer sizes (max 1232 bytes) to eliminate UDP packet fragmentation attacks. |
