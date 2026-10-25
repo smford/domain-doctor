@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
@@ -16,9 +17,12 @@ import (
 )
 
 var (
-	scanJSON    bool
-	scanTUI     bool
-	scanMermaid bool
+	scanJSON     bool
+	scanTUI      bool
+	scanMermaid  bool
+	scanCategory string
+	scanSeverity string
+	scanQuiet    bool
 )
 
 var scanCmd = &cobra.Command{
@@ -34,6 +38,9 @@ func init() {
 	scanCmd.Flags().BoolVar(&scanJSON, "json", false, "output results in raw JSON format")
 	scanCmd.Flags().BoolVar(&scanTUI, "tui", false, "launch interactive terminal UI")
 	scanCmd.Flags().BoolVar(&scanMermaid, "mermaid", false, "output Mermaid delegation diagram")
+	scanCmd.Flags().StringVarP(&scanCategory, "category", "c", "", "filter findings to comma-separated categories (e.g. dns,mail)")
+	scanCmd.Flags().StringVarP(&scanSeverity, "severity", "s", "", "minimum severity threshold to display (info, warn, crit)")
+	scanCmd.Flags().BoolVarP(&scanQuiet, "quiet", "q", false, "quiet mode; suppress banner and show only warnings/criticals")
 }
 
 func runScan(ctx context.Context, domain string, asJSON, asTUI, asMermaid bool) error {
@@ -71,6 +78,21 @@ func runScan(ctx context.Context, domain string, asJSON, asTUI, asMermaid bool) 
 		return nil
 	}
 
-	cli.PrintReport(report)
+	var catFilter []string
+	if scanCategory != "" {
+		catFilter = strings.Split(scanCategory, ",")
+	}
+
+	minSev := engine.Severity("")
+	switch strings.ToLower(scanSeverity) {
+	case "info":
+		minSev = engine.SeverityInfo
+	case "warn", "warning":
+		minSev = engine.SeverityWarning
+	case "crit", "critical":
+		minSev = engine.SeverityCritical
+	}
+
+	cli.PrintReportFiltered(report, catFilter, minSev, scanQuiet)
 	return nil
 }

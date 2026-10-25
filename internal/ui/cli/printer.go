@@ -52,50 +52,81 @@ func ComputeHealthScore(report *engine.DiagnosticReport) (int, string) {
 	return score, grade
 }
 
-func PrintReport(report *engine.DiagnosticReport) {
-	score, grade := ComputeHealthScore(report)
+func severityRank(s engine.Severity) int {
+	switch s {
+	case engine.SeverityPass:
+		return 1
+	case engine.SeverityInfo:
+		return 2
+	case engine.SeverityWarning:
+		return 3
+	case engine.SeverityCritical:
+		return 4
+	default:
+		return 0
+	}
+}
 
-	gradeColor := colorGreen
-	if score < 70 {
-		gradeColor = colorRed
-	} else if score < 85 {
-		gradeColor = colorYellow
+func PrintReportFiltered(report *engine.DiagnosticReport, categoryFilter []string, minSeverity engine.Severity, quiet bool) {
+	catMap := make(map[string]bool)
+	for _, c := range categoryFilter {
+		catMap[strings.ToLower(strings.TrimSpace(c))] = true
 	}
 
-	fmt.Printf("\n%s╔════════════════════════════════════════════════════════════════════╗%s\n", colorCyan, colorReset)
-	fmt.Printf("%s║                    DOMAIN DOCTOR AUDIT REPORT                      ║%s\n", colorCyan, colorReset)
-	fmt.Printf("%s╚════════════════════════════════════════════════════════════════════╝%s\n", colorCyan, colorReset)
+	minRank := severityRank(minSeverity)
 
-	fmt.Printf("%sTarget Domain   :%s %s%s%s\n", colorBold, colorReset, colorCyan, report.Domain, colorReset)
-	fmt.Printf("%sOverall Health  :%s %s%d/100 (Grade: %s)%s\n", colorBold, colorReset, gradeColor, score, grade, colorReset)
-	fmt.Printf("%sScan Duration   :%s %s\n", colorBold, colorReset, report.Duration)
-	fmt.Printf("%sNameservers     :%s %s\n", colorBold, colorReset, strings.Join(report.Nameservers, ", "))
-
-	passCount, infoCount, warnCount, critCount := 0, 0, 0, 0
-	for _, f := range report.Findings {
-		switch f.Severity {
-		case engine.SeverityPass:
-			passCount++
-		case engine.SeverityInfo:
-			infoCount++
-		case engine.SeverityWarning:
-			warnCount++
-		case engine.SeverityCritical:
-			critCount++
+	if !quiet {
+		score, grade := ComputeHealthScore(report)
+		gradeColor := colorGreen
+		if score < 70 {
+			gradeColor = colorRed
+		} else if score < 85 {
+			gradeColor = colorYellow
 		}
-	}
 
-	fmt.Printf("%sFindings Summary :%s %s%d PASS%s | %s%d INFO%s | %s%d WARN%s | %s%d CRIT%s\n\n",
-		colorBold, colorReset,
-		colorGreen, passCount, colorReset,
-		colorBlue, infoCount, colorReset,
-		colorYellow, warnCount, colorReset,
-		colorRed, critCount, colorReset)
+		fmt.Printf("\n%s╔════════════════════════════════════════════════════════════════════╗%s\n", colorCyan, colorReset)
+		fmt.Printf("%s║                    DOMAIN DOCTOR AUDIT REPORT                      ║%s\n", colorCyan, colorReset)
+		fmt.Printf("%s╚════════════════════════════════════════════════════════════════════╝%s\n", colorCyan, colorReset)
+
+		fmt.Printf("%sTarget Domain   :%s %s%s%s\n", colorBold, colorReset, colorCyan, report.Domain, colorReset)
+		fmt.Printf("%sOverall Health  :%s %s%d/100 (Grade: %s)%s\n", colorBold, colorReset, gradeColor, score, grade, colorReset)
+		fmt.Printf("%sScan Duration   :%s %s\n", colorBold, colorReset, report.Duration)
+		fmt.Printf("%sNameservers     :%s %s\n", colorBold, colorReset, strings.Join(report.Nameservers, ", "))
+
+		passCount, infoCount, warnCount, critCount := 0, 0, 0, 0
+		for _, f := range report.Findings {
+			switch f.Severity {
+			case engine.SeverityPass:
+				passCount++
+			case engine.SeverityInfo:
+				infoCount++
+			case engine.SeverityWarning:
+				warnCount++
+			case engine.SeverityCritical:
+				critCount++
+			}
+		}
+
+		fmt.Printf("%sFindings Summary :%s %s%d PASS%s | %s%d INFO%s | %s%d WARN%s | %s%d CRIT%s\n\n",
+			colorBold, colorReset,
+			colorGreen, passCount, colorReset,
+			colorBlue, infoCount, colorReset,
+			colorYellow, warnCount, colorReset,
+			colorRed, critCount, colorReset)
+	}
 
 	// Group findings by category
 	categories := []string{"DNS", "NegativeCache", "Mail", "Security", "Resilience", "Threat", "Registration"}
 	grouped := make(map[string][]engine.Finding)
 	for _, f := range report.Findings {
+		// Category filter check
+		if len(catMap) > 0 && !catMap[strings.ToLower(f.Category)] {
+			continue
+		}
+		// Severity filter check
+		if minRank > 0 && severityRank(f.Severity) < minRank {
+			continue
+		}
 		grouped[f.Category] = append(grouped[f.Category], f)
 	}
 
@@ -105,21 +136,31 @@ func PrintReport(report *engine.DiagnosticReport) {
 			continue
 		}
 
-		fmt.Printf("%s── %s Checks ────────────────────────────────────────────────────────%s\n", colorBold, strings.ToUpper(cat), colorReset)
+		if !quiet {
+			fmt.Printf("%s── %s Checks ────────────────────────────────────────────────────────%s\n", colorBold, strings.ToUpper(cat), colorReset)
+		}
 		for _, f := range findings {
 			badge := formatBadge(f.Severity)
 			fmt.Printf("  %s %s%s%s: %s\n", badge, colorBold, f.ID, colorReset, f.Summary)
-			if f.Detail != "" {
+			if f.Detail != "" && !quiet {
 				fmt.Printf("    %s%s%s\n", colorGray, f.Detail, colorReset)
 			}
 		}
-		fmt.Println()
+		if !quiet {
+			fmt.Println()
+		}
 	}
 
 	// Actionable Remediations section
 	remediations := make([]*engine.Remediation, 0)
 	for _, f := range report.Findings {
 		if f.Remediation != nil {
+			if len(catMap) > 0 && !catMap[strings.ToLower(f.Category)] {
+				continue
+			}
+			if minRank > 0 && severityRank(f.Severity) < minRank {
+				continue
+			}
 			remediations = append(remediations, f.Remediation)
 		}
 	}
@@ -141,6 +182,10 @@ func PrintReport(report *engine.DiagnosticReport) {
 			fmt.Println()
 		}
 	}
+}
+
+func PrintReport(report *engine.DiagnosticReport) {
+	PrintReportFiltered(report, nil, "", false)
 }
 
 func formatBadge(s engine.Severity) string {
