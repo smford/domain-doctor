@@ -1,0 +1,97 @@
+version: 2
+
+project_name: domain-doctor
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: domain-doctor
+    main: ./cmd/domain-doctor
+    binary: domain-doctor
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - LICENSE*
+      - README*
+      - docs/*
+
+dockers_v2:
+  - id: domain-doctor
+    images:
+      - "ghcr.io/smford/domain-doctor"
+    tags:
+      - "latest"
+      - "{{ .Tag }}"
+      - "v{{ .Major }}.{{ .Minor }}"
+      - "v{{ .Major }}"
+    dockerfile: Dockerfile.goreleaser
+    platforms:
+      - linux/amd64
+      - linux/arm64
+
+checksum:
+  name_template: 'checksums.txt'
+
+signs:
+  - id: cosign
+    cmd: cosign
+    artifacts: checksum
+    certificate: '${artifact}.pem'
+    args:
+      - "sign-blob"
+      - "--yes"
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+    output: true
+
+docker_signs:
+  - id: cosign
+    cmd: cosign
+    artifacts: all
+    args:
+      - "sign"
+      - "--yes"
+      - "${artifact}"
+    output: true
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: smford
+    name: domain-doctor
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## domain-doctor {{ .Tag }} ({{ .Date }})
+
+    Welcome to the latest release of `domain-doctor`!
