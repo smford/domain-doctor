@@ -42,7 +42,7 @@ jobs:
           docker run -d \
             --name domain-doctor-service \
             --network host \
-            domain-doctor:dast
+            domain-doctor:dast serve --port 8080
 
       - name: Verify domain-doctor service readiness
         run: |

@@ -27,11 +27,9 @@ func sanitizeDomain(input string) string {
 			raw = u.Host
 		}
 	}
-	// Strip any path component if user typed domain.com/path
 	if idx := strings.Index(raw, "/"); idx != -1 {
 		raw = raw[:idx]
 	}
-	// Strip port if user typed domain.com:8080
 	if idx := strings.Index(raw, ":"); idx != -1 {
 		raw = raw[:idx]
 	}
@@ -103,6 +101,8 @@ func init() {
 	rootCmd.Flags().StringVarP(&servePort, "port", "p", "", "run background health daemon on port (for container checks)")
 	rootCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "display version information")
 
+	serveCmd.Flags().StringVarP(&servePort, "port", "p", "8080", "port to serve health endpoint")
+
 	rootCmd.AddCommand(scanCmd)
 	rootCmd.AddCommand(watchCmd)
 	rootCmd.AddCommand(snapshotCmd)
@@ -116,6 +116,9 @@ func init() {
 }
 
 func runDaemon(port string) error {
+	if port == "" {
+		port = "8080"
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

@@ -4,7 +4,7 @@ FROM golang:1.27-alpine AS builder
 WORKDIR /src
 
 # Download dependencies first for caching
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy source
@@ -37,4 +37,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD wget -q -O- http://127.0.0.1:8080/healthz || exit 1
 
 ENTRYPOINT ["/usr/local/bin/domain-doctor"]
-CMD ["-port", "8080"]
+CMD ["serve", "--port", "8080"]
