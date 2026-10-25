@@ -84,7 +84,16 @@ jobs:
           repo-url: 'https://github.com/smford/domain-doctor'
           fallback-readme: 'false'
           check-links: 'true'
-          upload-pages-artifact: 'true'
+          upload-pages-artifact: 'false'
+
+      - name: Preserve Repository Documentation Engine
+        run: |
+          git checkout docs/index.html
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'docs'
 
       - name: Deploy to GitHub Pages
         id: deployment

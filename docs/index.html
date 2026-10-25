@@ -1430,12 +1430,12 @@ Domain Doctor is a production-grade, authoritative-first domain health inspectio
 * [Overview](index.md)
 * [Getting Started](getting-started.md)
 * [Rule Catalog (30 Checks)](rules.md)
-  * [1. DNS Core Protocols](rules.md#1-dns-core--protocols-dd-dns)
+  * [1. DNS Core Protocols](rules.md#1-dns-core-protocols-dd-dns)
   * [2. Negative Caching](rules.md#2-negative-caching-dd-nc)
-  * [3. Mail & Identity](rules.md#3-mail--identity-security-dd-mail)
-  * [4. Cryptographic & Web Security](rules.md#4-cryptographic--web-security-dd-sec)
-  * [5. Resilience & Routing](rules.md#5-resilience--routing-dd-res)
-  * [6. Registration & Lifecycle](rules.md#6-registration--lifecycle-dd-reg)
+  * [3. Mail & Identity](rules.md#3-mail-identity-security-dd-mail)
+  * [4. Cryptographic & Web Security](rules.md#4-cryptographic-web-security-dd-sec)
+  * [5. Resilience & Routing](rules.md#5-resilience-routing-dd-res)
+  * [6. Registration & Lifecycle](rules.md#6-registration-lifecycle-dd-reg)
   * [7. Threat Intelligence](rules.md#7-threat-intelligence-dd-thr)
 * [CLI Command Reference](cli-reference.md)
 * [Configuration Guide](configuration.md)
@@ -2028,10 +2028,42 @@ Domain Doctor is a production-grade, authoritative-first domain health inspectio
             link.setAttribute('href', '#' + href);
           }
         }
-        link.addEventListener('click', () => {
+        link.addEventListener('click', (e) => {
+          const rawHref = link.getAttribute('href') || '';
+          if (!rawHref || rawHref.startsWith('http://') || rawHref.startsWith('https://') || rawHref.startsWith('mailto:')) {
+            return;
+          }
+
           if (window.innerWidth <= 1024) {
             docSidebar.classList.remove('is-open');
             if (sidebarBackdrop) sidebarBackdrop.classList.remove('is-active');
+          }
+
+          const route = parseRoute(rawHref);
+          const targetFile = route.filePath || currentPath || 'index.md';
+          const targetSection = route.sectionId || '';
+
+          if (targetFile === currentPath && contentEl.querySelector('h1, h2, h3')) {
+            e.preventDefault();
+            const targetHash = '#' + targetFile + (targetSection ? '#' + targetSection : '');
+            if (window.location.hash !== targetHash) {
+              history.pushState(null, '', targetHash);
+            }
+            if (targetSection) {
+              scrollToSection(targetSection);
+            } else {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            updateSidebarActiveLink();
+            return;
+          }
+
+          e.preventDefault();
+          const targetHash = '#' + targetFile + (targetSection ? '#' + targetSection : '');
+          if (window.location.hash !== targetHash) {
+            window.location.hash = targetHash;
+          } else {
+            handleRouting();
           }
         });
       });
@@ -2085,15 +2117,46 @@ Domain Doctor is a production-grade, authoritative-first domain health inspectio
     function updateSidebarActiveLink() {
       const sidebarNav = document.getElementById('sidebar-nav');
       if (!sidebarNav) return;
-      sidebarNav.querySelectorAll('a').forEach(link => {
-        const href = link.getAttribute('href') || '';
-        const target = href.replace(/^#/, '').split('#')[0];
-        if (target && target === currentPath) {
-          link.classList.add('is-active');
-        } else {
-          link.classList.remove('is-active');
-        }
-      });
+
+      const currentRoute = parseRoute(window.location.hash);
+      const activeFile = currentRoute.filePath || currentPath || 'index.md';
+      const activeSection = (currentRoute.sectionId || '').replace(/-+/g, '-').toLowerCase();
+
+      let exactMatchFound = false;
+
+      // First pass: look for exact file + section match
+      if (activeSection) {
+        sidebarNav.querySelectorAll('a').forEach(link => {
+          const href = link.getAttribute('href') || '';
+          const route = parseRoute(href);
+          const linkFile = route.filePath || '';
+          const linkSection = (route.sectionId || '').replace(/-+/g, '-').toLowerCase();
+
+          if (linkFile === activeFile && linkSection && (linkSection === activeSection || slugify(linkSection) === slugify(activeSection))) {
+            link.classList.add('is-active');
+            exactMatchFound = true;
+          } else {
+            link.classList.remove('is-active');
+          }
+        });
+      }
+
+      // If no section match, highlight the document link
+      if (!exactMatchFound) {
+        sidebarNav.querySelectorAll('a').forEach(link => {
+          const href = link.getAttribute('href') || '';
+          const route = parseRoute(href);
+          const linkFile = route.filePath || '';
+          const linkSection = route.sectionId || '';
+
+          if (linkFile === activeFile && !linkSection) {
+            link.classList.add('is-active');
+          } else {
+            link.classList.remove('is-active');
+          }
+        });
+      }
+
       updatePagination(currentPath);
     }
 
@@ -2152,16 +2215,98 @@ Domain Doctor is a production-grade, authoritative-first domain health inspectio
       });
     }
 
+    function findHeadingOrAnchor(targetId) {
+      if (!targetId) return null;
+
+      let cleanTarget = targetId.trim();
+      try {
+        cleanTarget = decodeURIComponent(cleanTarget);
+      } catch (_) {}
+      cleanTarget = cleanTarget.replace(/^#+/, '').trim();
+
+      const collapsedTarget = cleanTarget.replace(/-+/g, '-').toLowerCase();
+      const slugifiedTarget = slugify(cleanTarget);
+
+      // 1. Direct getElementById
+      let el = document.getElementById(cleanTarget) ||
+               document.getElementById(targetId);
+      if (el) return el;
+
+      // 2. Slugified ID
+      if (slugifiedTarget) {
+        el = document.getElementById(slugifiedTarget);
+        if (el) return el;
+      }
+
+      // 3. Collapsed hyphens ID (e.g. GitHub style -- vs single -)
+      if (collapsedTarget) {
+        el = document.getElementById(collapsedTarget);
+        if (el) return el;
+      }
+
+      // 4. Search in content headings and anchors
+      const elements = contentEl.querySelectorAll('h1, h2, h3, h4, h5, h6, [id], a[name]');
+      for (const h of elements) {
+        const id = (h.id || '').toLowerCase();
+        const name = (h.getAttribute('name') || '').toLowerCase();
+        const collapsedId = id.replace(/-+/g, '-');
+        const textSlug = slugify(h.textContent || '');
+        const textSlugCollapsed = textSlug.replace(/-+/g, '-');
+
+        if (id === cleanTarget.toLowerCase() ||
+            id === collapsedTarget ||
+            id === slugifiedTarget ||
+            collapsedId === collapsedTarget ||
+            name === cleanTarget.toLowerCase() ||
+            name === collapsedTarget ||
+            textSlug === slugifiedTarget ||
+            textSlug === collapsedTarget ||
+            textSlugCollapsed === collapsedTarget) {
+          return h;
+        }
+      }
+
+      // 5. Partial number/word match on headings (e.g. "1-dns-core" or "1.")
+      for (const h of elements) {
+        if (/^H[1-6]$/i.test(h.tagName)) {
+          const hText = (h.textContent || '').trim().toLowerCase();
+          const cleanTargetNoPrefix = collapsedTarget.replace(/^\d+[-_.]\s*/, '');
+          if (cleanTargetNoPrefix && cleanTargetNoPrefix.length > 3) {
+            const hSlug = slugify(hText);
+            if (hSlug.includes(cleanTargetNoPrefix) || hText.includes(cleanTargetNoPrefix.replace(/-/g, ' '))) {
+              return h;
+            }
+          }
+        }
+      }
+
+      return null;
+    }
+
     function scrollToSection(sectionId) {
-      if (!sectionId) return;
-      requestAnimationFrame(() => {
-        const el = document.getElementById(sectionId);
+      if (!sectionId) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      function attemptScroll() {
+        const el = findHeadingOrAnchor(sectionId);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
           el.classList.add('heading-target-highlight');
           setTimeout(() => el.classList.remove('heading-target-highlight'), 1200);
+          return true;
         }
-      });
+        return false;
+      }
+
+      if (!attemptScroll()) {
+        requestAnimationFrame(() => {
+          if (!attemptScroll()) {
+            setTimeout(attemptScroll, 120);
+          }
+        });
+      }
     }
 
     // --- Dynamic Table of Contents & Scroll-Spy ---
@@ -2188,6 +2333,25 @@ Domain Doctor is a production-grade, authoritative-first domain health inspectio
       }).join('');
 
       const tocLinks = tocNav.querySelectorAll('.toc-link');
+
+      tocLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          const rawHref = link.getAttribute('href') || '';
+          if (!rawHref) return;
+          e.preventDefault();
+          const route = parseRoute(rawHref);
+          const targetSection = route.sectionId || link.dataset.targetId || '';
+          const targetHash = '#' + (route.filePath || currentPath) + (targetSection ? '#' + targetSection : '');
+          if (window.location.hash !== targetHash) {
+            history.pushState(null, '', targetHash);
+          }
+          if (targetSection) {
+            scrollToSection(targetSection);
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
+      });
 
       headingObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
