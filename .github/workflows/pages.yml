@@ -59,30 +59,33 @@ jobs:
             echo "Synchronizing documentation with release: $TARGET_TAG"
             chmod +x ./scripts/update-docs-version.sh
             ./scripts/update-docs-version.sh "$TARGET_TAG" "docs/index.html"
+            ./scripts/update-docs-version.sh "$TARGET_TAG" "docs/getting-started.md"
 
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add docs/index.html
+            git add docs/
             if ! git diff --staged --quiet; then
-              echo "Committing updated docs/index.html ($TARGET_TAG) to main..."
+              echo "Committing updated docs ($TARGET_TAG) to main..."
               git commit -m "chore(docs): sync release version to ${TARGET_TAG} [skip ci]"
               git pull --rebase origin main || true
               git push origin main
             else
-              echo "docs/index.html is already up-to-date with $TARGET_TAG."
+              echo "docs are already up-to-date with $TARGET_TAG."
             fi
           else
             echo "Warning: No release tag found; deploying docs as-is."
           fi
 
-      - name: Setup Pages
-        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+      - name: Setup Documentation with md-web-renderer
+        uses: smford/md-web-renderer@v1
         with:
-          path: './docs'
+          path: 'docs'
+          title: 'Domain Doctor'
+          repo-url: 'https://github.com/smford/domain-doctor'
+          fallback-readme: 'false'
+          check-links: 'true'
+          upload-pages-artifact: 'true'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+        uses: actions/deploy-pages@v4

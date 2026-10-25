@@ -1,3 +1,8 @@
+---
+title: Diagnostic Rule Catalog
+description: Complete specification of all 30 security and diagnostic audit rules with unique CVE-style identifiers, threat models, and remediations.
+---
+
 # Domain Doctor Security & Diagnostic Rule Catalog
 
 This catalog documents the complete battery of 30 diagnostic and security auditing rules implemented in `domain-doctor`. Each rule possesses a permanent, unique identifier formatted as `DD-<CATEGORY>-<NUMBER>`.
