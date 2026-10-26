@@ -22,8 +22,8 @@ Capture a point-in-time cryptographic JSON baseline of all discovered resource r
 domain-doctor snapshot example.com -o pre-migration.json
 ```
 
-### Authentic Output
-```
+### Authentic CLI Output
+```text
 ✓ Interrogating authoritative nameservers for example.com...
 ✓ Discovered 14 resource record sets across 2 authoritative servers
 ✓ Saved snapshot of example.com to pre-migration.json
@@ -81,7 +81,7 @@ domain-doctor watch example.com --interval=3s
 ![Live Cutover Watch Mode](assets/screenshot-watch.svg)
 
 ### Authentic CLI Output
-```
+```text
 ┌─ [LIVE CUTOVER MONITOR] ─────────────────────────────────────────────────────────┐
 │ Target Domain : example.com                 Polling Interval : 3s (Cycle #42)     │
 │ Status        : ● ACTIVE STREAM              Last Polled      : 23:51:44 UTC        │
@@ -125,7 +125,7 @@ domain-doctor diff pre-migration.json example.com
 ![Zone Topology Diff](assets/screenshot-diff.svg)
 
 ### Authentic CLI Output
-```
+```text
 === Zone Topology Diff: example.com ===
 
 [MODIFIED] Authoritative Nameservers (NS):
@@ -164,7 +164,7 @@ domain-doctor scan example.com --category=mail
 ```
 
 ### Authentic CLI Output
-```
+```text
 ── Mail & Identity Security ─────────────────────────────────────────────────────
   [CRIT] DD-MAIL-001 (mail_spf): SPF mechanism lookup depth exceeds RFC 7208 limit (11 / 10 allowed)
     Detail: Recursively resolving SPF mechanisms for example.com traversed 11 DNS lookups.
@@ -217,7 +217,7 @@ domain-doctor scan api.example.com --category=negcache
 ```
 
 ### Authentic CLI Output
-```
+```text
 ── NEGATIVECACHE Checks ────────────────────────────────────────────────────────
   [WARN] DD-NC-001 (dns_negcache): Stale RFC 2308 negative caching observed across public resolvers
     Target Record : api.example.com (A)
@@ -250,7 +250,7 @@ domain-doctor scan staging.example.com --category=security
 ```
 
 ### Authentic CLI Output
-```
+```text
 ── Cryptographic & Web Security ─────────────────────────────────────────────────
   [CRIT] DD-SEC-006 (security_takeover): Subdomain Takeover Vulnerability Detected!
     FQDN         : staging.example.com
@@ -283,7 +283,7 @@ domain-doctor audit-drift example.com --tf-state ./terraform.tfstate
 ```
 
 ### Authentic CLI Output
-```
+```text
 === Terraform State Drift Audit for example.com ===
 
 ✔ [MATCH] aws_route53_record.apex_a (A):
@@ -345,10 +345,8 @@ jobs:
           fail-on-crit: 'false'
 ```
 
-### GitHub Actions Step Summary Result
-When the job runs, it automatically formats and renders a visual report in the GitHub Actions Run Summary:
-
-```
+### Authentic CLI Output (GitHub Actions Step Summary)
+```markdown
 ### 🛡️ Domain Doctor Diagnostic Report: example.com
 * Health Score: 15 / 100 (Grade: F)
 * Authoritative Nameservers: hera.ns.cloudflare.com, elliott.ns.cloudflare.com
