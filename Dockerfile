@@ -16,7 +16,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} \
     go build -ldflags="-s -w" -o /bin/domain-doctor ./cmd/domain-doctor
 
 # Runtime stage
-FROM alpine:3.21
+FROM alpine:3.24
 
 # Install ca-certificates and tzdata
 RUN apk add --no-cache ca-certificates tzdata
